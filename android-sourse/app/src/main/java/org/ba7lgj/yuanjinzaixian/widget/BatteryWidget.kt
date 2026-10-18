@@ -55,55 +55,62 @@ class BatteryWidget : GlanceAppWidget() {
                     .clickable(actionRunCallback<RefreshBatteryAction>()),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
+                Box(
                     modifier = GlanceModifier
-                        .background(ColorProvider(Color(0xB3FFFFFF)))
-                        .padding(4.dp)
-                        .cornerRadius(12.dp),
-                    horizontalAlignment = Alignment.Horizontal.CenterHorizontally
+                        .background(ColorProvider(Color(0x662E7D32)))
+                        .cornerRadius(13.dp)
+                        .padding(1.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.Vertical.CenterVertically
+                    Column(
+                        modifier = GlanceModifier
+                            .background(ColorProvider(Color(0xB3FFFFFF)))
+                            .padding(4.dp)
+                            .cornerRadius(12.dp),
+                        horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                     ) {
-                        Text(
-                            text = displayName(state),
-                            modifier = GlanceModifier.width(58.dp),
-                            style = TextStyle(
-                                color = GlanceTheme.colors.onSurface,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Column(
-                            horizontalAlignment = Alignment.Horizontal.CenterHorizontally
+                        Row(
+                            verticalAlignment = Alignment.Vertical.CenterVertically
                         ) {
-                            BatteryBar(state)
-                            if (
-                                state.status == BatteryStatus.STABLE &&
-                                !state.stale &&
-                                state.rangeKm != null
-                            ) {
-                                Text(
-                                    text = "预计 ${state.rangeKm} km",
-                                    modifier = GlanceModifier.width(136.dp),
-                                    style = TextStyle(
-                                        color = GlanceTheme.colors.onSurfaceVariant,
-                                        fontSize = 9.sp,
-                                        textAlign = TextAlign.Center
-                                    )
+                            Text(
+                                text = displayName(state),
+                                modifier = GlanceModifier.width(58.dp),
+                                style = TextStyle(
+                                    color = GlanceTheme.colors.onSurface,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
                                 )
-                            }
-                        }
-                        Spacer(GlanceModifier.width(6.dp))
-                        Text(
-                            text = state.voltageV?.let { "%.2fV".format(it) } ?: "--",
-                            modifier = GlanceModifier.width(42.dp),
-                            style = TextStyle(
-                                color = GlanceTheme.colors.onSurface,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
                             )
-                        )
+                            Column(
+                                horizontalAlignment = Alignment.Horizontal.CenterHorizontally
+                            ) {
+                                BatteryBar(state)
+                                if (
+                                    state.status == BatteryStatus.STABLE &&
+                                    !state.stale &&
+                                    state.rangeKm != null
+                                ) {
+                                    Text(
+                                        text = "预计 ${state.rangeKm} km",
+                                        modifier = GlanceModifier.width(136.dp),
+                                        style = TextStyle(
+                                            color = GlanceTheme.colors.onSurfaceVariant,
+                                            fontSize = 9.sp,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    )
+                                }
+                            }
+                            Spacer(GlanceModifier.width(6.dp))
+                            Text(
+                                text = state.voltageV?.let { "%.2fV".format(it) } ?: "--",
+                                modifier = GlanceModifier.width(42.dp),
+                                style = TextStyle(
+                                    color = GlanceTheme.colors.onSurface,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
                     }
                 }
             }
