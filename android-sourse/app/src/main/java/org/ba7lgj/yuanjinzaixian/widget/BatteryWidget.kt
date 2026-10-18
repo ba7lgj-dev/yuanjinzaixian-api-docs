@@ -62,7 +62,7 @@ class BatteryWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .background(ColorProvider(Color(0xB3FFFFFF)))
-                        .padding(4.dp)
+                        .padding(6.dp)
                         .cornerRadius(12.dp),
                     horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                 ) {
@@ -75,10 +75,10 @@ class BatteryWidget : GlanceAppWidget() {
                         Spacer(GlanceModifier.width(4.dp))
                         Text(
                             text = displayName(state),
-                            modifier = GlanceModifier.width(52.dp),
+                            modifier = GlanceModifier.width(58.dp),
                             style = TextStyle(
                                 color = GlanceTheme.colors.onSurface,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         )
@@ -86,10 +86,10 @@ class BatteryWidget : GlanceAppWidget() {
                         Spacer(GlanceModifier.width(4.dp))
                         Text(
                             text = rightText(state),
-                            modifier = GlanceModifier.width(44.dp),
+                            modifier = GlanceModifier.width(42.dp),
                             style = TextStyle(
                                 color = GlanceTheme.colors.onSurface,
-                                fontSize = 9.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
                             )
@@ -110,7 +110,7 @@ class BatteryWidget : GlanceAppWidget() {
                         text = "E",
                         style = TextStyle(
                             color = GlanceTheme.colors.onSurfaceVariant,
-                            fontSize = 6.sp
+                            fontSize = 7.sp
                         )
                     )
                     Spacer(GlanceModifier.defaultWeight())
@@ -118,7 +118,7 @@ class BatteryWidget : GlanceAppWidget() {
                         text = "F",
                         style = TextStyle(
                             color = GlanceTheme.colors.onSurfaceVariant,
-                            fontSize = 6.sp
+                            fontSize = 7.sp
                         )
                     )
                 }
@@ -197,7 +197,7 @@ class BatteryWidget : GlanceAppWidget() {
     private fun displayName(state: BatteryState): String {
         val name = state.deviceLabel?.trim().orEmpty()
         if (name.isBlank()) return "我的车"
-        return if (name.length > 6) name.take(5) + "…" else name
+        return if (name.length > 5) name.take(4) + "…" else name
     }
 
     private fun rightText(state: BatteryState): String {
