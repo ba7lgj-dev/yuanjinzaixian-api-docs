@@ -30,6 +30,32 @@ interface BatteryAnchorDao {
 
     @Query("SELECT * FROM battery_anchors ORDER BY createdAt DESC LIMIT :limit")
     suspend fun recent(limit: Int): List<BatteryAnchorEntity>
+
+    @Query("DELETE FROM battery_anchors")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface AnchorRequestDao {
+    @Insert
+    suspend fun insert(request: AnchorRequestEntity): Long
+
+    @Query(
+        "SELECT * FROM anchor_requests WHERE type = :type AND status = 'pending' " +
+            "ORDER BY requestedAt DESC LIMIT 1"
+    )
+    suspend fun latestPending(type: String): AnchorRequestEntity?
+
+    @Query("SELECT * FROM anchor_requests ORDER BY requestedAt DESC LIMIT 1")
+    suspend fun latest(): AnchorRequestEntity?
+
+    @Query(
+        "UPDATE anchor_requests SET status = :status WHERE id = :id"
+    )
+    suspend fun resolve(id: Long, status: String)
+
+    @Query("DELETE FROM anchor_requests")
+    suspend fun deleteAll()
 }
 
 @Dao

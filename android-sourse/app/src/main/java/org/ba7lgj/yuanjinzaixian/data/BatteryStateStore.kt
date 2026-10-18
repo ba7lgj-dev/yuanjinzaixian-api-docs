@@ -22,6 +22,10 @@ object BatteryStateStore {
     private const val KEY_AGE = "age_seconds"
     private const val KEY_STALE = "stale"
     private const val KEY_ERROR = "last_error"
+    private const val KEY_ADDRESS = "address"
+    private const val KEY_FULL_PENDING = "full_request_pending"
+    private const val KEY_FULL_EXPIRES = "full_request_expires"
+    private const val KEY_FULL_EXPIRED = "full_request_expired"
     private const val KEY_PROTECTION = "protection_voltage"
     private const val KEY_FULL_SUGGESTION = "full_suggestion"
     private const val KEY_LOCATOR_POWER = "locator_power_pct"
@@ -56,6 +60,10 @@ object BatteryStateStore {
             ageSeconds = prefs.nullableLong(KEY_AGE),
             stale = prefs.getBoolean(KEY_STALE, true),
             lastError = prefs.getString(KEY_ERROR, null),
+            address = prefs.getString(KEY_ADDRESS, null),
+            fullRequestPending = prefs.getBoolean(KEY_FULL_PENDING, false),
+            fullRequestExpiresAt = prefs.nullableLong(KEY_FULL_EXPIRES),
+            fullRequestExpired = prefs.getBoolean(KEY_FULL_EXPIRED, false),
             protectionVoltage = prefs.getFloat(KEY_PROTECTION, 57.8f).toDouble(),
             fullSuggestion = prefs.getBoolean(KEY_FULL_SUGGESTION, false),
             locatorPowerPct = prefs.nullableInt(KEY_LOCATOR_POWER),
@@ -84,6 +92,10 @@ object BatteryStateStore {
         editor.putNullableLong(KEY_AGE, value.ageSeconds)
         editor.putBoolean(KEY_STALE, value.stale)
         editor.putString(KEY_ERROR, value.lastError)
+        editor.putString(KEY_ADDRESS, value.address)
+        editor.putBoolean(KEY_FULL_PENDING, value.fullRequestPending)
+        editor.putNullableLong(KEY_FULL_EXPIRES, value.fullRequestExpiresAt)
+        editor.putBoolean(KEY_FULL_EXPIRED, value.fullRequestExpired)
         editor.putFloat(KEY_PROTECTION, value.protectionVoltage.toFloat())
         editor.putBoolean(KEY_FULL_SUGGESTION, value.fullSuggestion)
         editor.putNullableInt(KEY_LOCATOR_POWER, value.locatorPowerPct)

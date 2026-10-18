@@ -11,15 +11,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         VoltageSampleEntity::class,
         BatteryAnchorEntity::class,
+        AnchorRequestEntity::class,
         ChargeEventEntity::class,
         AppSettingsEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun voltageSampleDao(): VoltageSampleDao
     abstract fun batteryAnchorDao(): BatteryAnchorDao
+    abstract fun anchorRequestDao(): AnchorRequestDao
     abstract fun chargeEventDao(): ChargeEventDao
     abstract fun appSettingsDao(): AppSettingsDao
 
@@ -33,7 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "yuanjin_battery.db"
-                ).addMigrations(MIGRATION_1_2)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { instance = it }
             }
@@ -41,6 +43,20 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE app_settings ADD COLUMN nickname TEXT")
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS anchor_requests (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "type TEXT NOT NULL, " +
+                        "requestedAt INTEGER NOT NULL, " +
+                        "expiresAt INTEGER NOT NULL, " +
+                        "status TEXT NOT NULL)"
+                )
+                db.execSQL("DELETE FROM battery_anchors")
             }
         }
     }

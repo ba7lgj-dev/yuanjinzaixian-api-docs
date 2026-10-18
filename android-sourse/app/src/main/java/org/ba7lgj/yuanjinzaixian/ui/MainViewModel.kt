@@ -164,6 +164,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun resetCalibration() {
+        viewModelScope.launch {
+            runCatching { repo.resetCalibration() }
+                .onSuccess {
+                    ui = ui.copy(
+                        error = null,
+                        chartSamples = repo.recentSamples(30)
+                    )
+                }
+                .onFailure { ui = ui.copy(error = it.readableMessage()) }
+        }
+    }
+
     fun saveProtectionVoltage(value: String) {
         val parsed = value.toDoubleOrNull()
         if (parsed == null || parsed !in 45.0..70.0) {

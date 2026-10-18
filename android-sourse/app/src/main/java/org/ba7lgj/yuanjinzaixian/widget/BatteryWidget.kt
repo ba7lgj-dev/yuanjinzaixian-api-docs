@@ -8,6 +8,8 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -33,6 +35,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.text.TextAlign
 import androidx.glance.unit.ColorProvider
+import org.ba7lgj.yuanjinzaixian.R
 import org.ba7lgj.yuanjinzaixian.YuanJinApplication
 import org.ba7lgj.yuanjinzaixian.data.BatteryStateStore
 import org.ba7lgj.yuanjinzaixian.domain.BatteryState
@@ -55,63 +58,79 @@ class BatteryWidget : GlanceAppWidget() {
                     .clickable(actionRunCallback<RefreshBatteryAction>()),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
+                Column(
                     modifier = GlanceModifier
-                        .background(ColorProvider(Color(0x662E7D32)))
-                        .cornerRadius(13.dp)
-                        .padding(1.dp)
+                        .fillMaxWidth()
+                        .background(ColorProvider(Color(0xB3FFFFFF)))
+                        .padding(4.dp)
+                        .cornerRadius(12.dp),
+                    horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = GlanceModifier
-                            .background(ColorProvider(Color(0xB3FFFFFF)))
-                            .padding(4.dp)
-                            .cornerRadius(12.dp),
-                        horizontalAlignment = Alignment.Horizontal.CenterHorizontally
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.Vertical.CenterVertically
-                        ) {
-                            Text(
-                                text = displayName(state),
-                                modifier = GlanceModifier.width(58.dp),
-                                style = TextStyle(
-                                    color = GlanceTheme.colors.onSurface,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                    Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+                        Image(
+                            provider = ImageProvider(R.drawable.ic_aima),
+                            contentDescription = null,
+                            modifier = GlanceModifier.width(14.dp).height(14.dp)
+                        )
+                        Spacer(GlanceModifier.width(4.dp))
+                        Text(
+                            text = displayName(state),
+                            modifier = GlanceModifier.width(52.dp),
+                            style = TextStyle(
+                                color = GlanceTheme.colors.onSurface,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
                             )
-                            Column(
-                                horizontalAlignment = Alignment.Horizontal.CenterHorizontally
-                            ) {
-                                BatteryBar(state)
-                                if (
-                                    state.status == BatteryStatus.STABLE &&
-                                    !state.stale &&
-                                    state.rangeKm != null
-                                ) {
-                                    Text(
-                                        text = "预计 ${state.rangeKm} km",
-                                        modifier = GlanceModifier.width(136.dp),
-                                        style = TextStyle(
-                                            color = GlanceTheme.colors.onSurfaceVariant,
-                                            fontSize = 9.sp,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    )
-                                }
-                            }
-                            Spacer(GlanceModifier.width(6.dp))
-                            Text(
-                                text = state.voltageV?.let { "%.2fV".format(it) } ?: "--",
-                                modifier = GlanceModifier.width(42.dp),
-                                style = TextStyle(
-                                    color = GlanceTheme.colors.onSurface,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                        )
+                        BarWithMarkers(state)
+                        Spacer(GlanceModifier.width(4.dp))
+                        Text(
+                            text = rightText(state),
+                            modifier = GlanceModifier.width(44.dp),
+                            style = TextStyle(
+                                color = GlanceTheme.colors.onSurface,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
                             )
-                        }
+                        )
                     }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun BarWithMarkers(state: BatteryState) {
+        Column(horizontalAlignment = Alignment.Horizontal.CenterHorizontally) {
+            BatteryBar(state)
+            Box(modifier = GlanceModifier.width(136.dp).height(7.dp)) {
+                Row(modifier = GlanceModifier.fillMaxSize()) {
+                    Text(
+                        text = "E",
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSurfaceVariant,
+                            fontSize = 6.sp
+                        )
+                    )
+                    Spacer(GlanceModifier.defaultWeight())
+                    Text(
+                        text = "F",
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSurfaceVariant,
+                            fontSize = 6.sp
+                        )
+                    )
+                }
+                Row(modifier = GlanceModifier.fillMaxSize()) {
+                    Spacer(GlanceModifier.width(25.dp))
+                    Spacer(
+                        GlanceModifier
+                            .width(4.dp)
+                            .height(4.dp)
+                            .background(ColorProvider(Color(0xFF8B8B86)))
+                            .cornerRadius(2.dp)
+                    )
                 }
             }
         }
@@ -128,29 +147,29 @@ class BatteryWidget : GlanceAppWidget() {
         Box(
             modifier = GlanceModifier
                 .width(136.dp)
-                .height(22.dp),
+                .height(31.dp),
             contentAlignment = Alignment.CenterStart
         ) {
             Spacer(
                 GlanceModifier
                     .width(136.dp)
-                    .height(18.dp)
+                    .height(27.dp)
                     .background(ColorProvider(Color(0xFFF2F2EE)))
-                    .cornerRadius(9.dp)
+                    .cornerRadius(13.dp)
             )
             Spacer(
                 GlanceModifier
                     .width(fillWidth.dp)
-                    .height(18.dp)
+                    .height(27.dp)
                     .background(ColorProvider(fillColor(soc)))
-                    .cornerRadius(9.dp)
+                    .cornerRadius(13.dp)
             )
             Row(modifier = GlanceModifier.fillMaxSize()) {
                 Spacer(GlanceModifier.width(pointerOffset.dp))
                 Box(
                     modifier = GlanceModifier
                         .width(5.dp)
-                        .height(22.dp)
+                        .height(31.dp)
                         .background(ColorProvider(Color(0xFFFFFFFF)))
                         .cornerRadius(3.dp)
                 ) {
@@ -168,7 +187,7 @@ class BatteryWidget : GlanceAppWidget() {
                 Spacer(
                     GlanceModifier
                         .width(1.dp)
-                        .height(18.dp)
+                        .height(27.dp)
                         .background(ColorProvider(Color(0x66333333)))
                 )
             }
@@ -179,6 +198,19 @@ class BatteryWidget : GlanceAppWidget() {
         val name = state.deviceLabel?.trim().orEmpty()
         if (name.isBlank()) return "我的车"
         return if (name.length > 6) name.take(5) + "…" else name
+    }
+
+    private fun rightText(state: BatteryState): String {
+        val soc = state.displaySocPercent ?: state.socPercent ?: state.instantSocPercent
+        return if (
+            state.status == BatteryStatus.STABLE &&
+            !state.stale &&
+            state.rangeKm != null
+        ) {
+            "${state.rangeKm}km"
+        } else {
+            soc?.let { "$it%" } ?: "--"
+        }
     }
 
     private fun fillColor(soc: Int): Color = when {

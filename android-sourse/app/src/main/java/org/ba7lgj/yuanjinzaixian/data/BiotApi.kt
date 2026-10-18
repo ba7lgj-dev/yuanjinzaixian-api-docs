@@ -88,14 +88,21 @@ class BiotApi {
     fun getDetail(simei: String, sid: String): DeviceDetail {
         val json = post("device", "GetDetail", JSONObject().put("simei", simei), sid)
         val lastPos = json.optString("last_pos")
-        val lastPosTime = parseLastPosTime(lastPos)
+        val position = parseLastPos(lastPos)
         val rawDayDistance = json.optDouble("day_distance", Double.NaN)
             .takeUnless { it.isNaN() }
         return DeviceDetail(
             simei = simei,
             voltageV = parseVoltage(json.optString("external_voltage")),
             lastComTime = json.optLong("last_com_time").takeIf { it > 0 },
-            lastPosTime = lastPosTime,
+            lastPosTime = position?.optLong("time")?.takeIf { it > 0 },
+            lat = position?.optDouble("lat", Double.NaN)
+                ?.takeUnless { it.isNaN() }
+                ?.let { if (kotlin.math.abs(it) > 1000) it / 1_000_000 else it },
+            lon = position?.optDouble("lon", Double.NaN)
+                ?.takeUnless { it.isNaN() }
+                ?.let { if (kotlin.math.abs(it) > 1000) it / 1_000_000 else it },
+            wgs = position?.optString("wgs")?.takeIf { it.isNotBlank() },
             curTime = json.optLong("cur_time").takeIf { it > 0 },
             state = json.optString("state").takeIf { it.isNotBlank() },
             stateBeginTime = json.optLong("state_begin_time").takeIf { it > 0 },
@@ -118,6 +125,26 @@ class BiotApi {
                 .put("type", "e_cmd_query_location"),
             sid
         )
+    }
+
+    fun batchGetAddress(lat: Double, lon: Double, sid: String): String? {
+        if (lat !in -90.0..90.0 || lon !in -180.0..180.0) return null
+        val json = post(
+            "location",
+            "BatchGetAddr",
+            JSONObject()
+                .put("coordtype", "gcj02ll")
+                .put("language", "cn")
+                .put(
+                    "latlng",
+                    org.json.JSONArray().put("%.6f,%.6f".format(lon, lat))
+                ),
+            sid
+        )
+        val item = json.optJSONArray("items")?.optJSONObject(0) ?: return null
+        val address = item.optString("address")
+        val unit = item.optString("unit")
+        return (address + unit).takeIf { it.isNotBlank() }
     }
 
     private fun post(
@@ -168,12 +195,8 @@ class BiotApi {
             ?.toDoubleOrNull()
     }
 
-    private fun parseLastPosTime(value: String): Long? {
-        if (value.isBlank()) return null
-        return runCatching {
-            JSONObject(value).optLong("time").takeIf { it > 0 }
-        }.getOrNull()
-    }
+    private fun parseLastPos(value: String): JSONObject? =
+        if (value.isBlank()) null else runCatching { JSONObject(value) }.getOrNull()
 
     private fun normalizeDayDistance(raw: Double): Double =
         if (raw > 1000.0) raw / 1000.0 else raw

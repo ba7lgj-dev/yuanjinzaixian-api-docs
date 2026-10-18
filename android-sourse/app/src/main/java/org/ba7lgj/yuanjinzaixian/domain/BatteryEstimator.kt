@@ -48,7 +48,7 @@ object BatteryEstimator {
 
     fun rangeKm(
         socPercent: Int?,
-        protectionSoc: Double = PROTECTION_SOC,
+        protectionSoc: Double = 0.0,
         socPerKm: Double = DEFAULT_SOC_PER_KM
     ): Int? {
         val soc = socPercent ?: return null

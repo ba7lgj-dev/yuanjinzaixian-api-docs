@@ -21,11 +21,12 @@ class BatteryEstimatorTest {
     }
 
     @Test
-    fun rangeUsesTwentyPercentProtectionLine() {
-        assertEquals(32, BatteryEstimator.rangeKm(100))
-        assertEquals(12, BatteryEstimator.rangeKm(50))
-        assertEquals(0, BatteryEstimator.rangeKm(20))
-        assertEquals(0, BatteryEstimator.rangeKm(10))
+    fun rangeUsesActualEmptyInsteadOfTwentyPercentReserve() {
+        assertEquals(40, BatteryEstimator.rangeKm(100))
+        assertEquals(20, BatteryEstimator.rangeKm(50))
+        assertEquals(8, BatteryEstimator.rangeKm(20))
+        assertEquals(4, BatteryEstimator.rangeKm(10))
+        assertEquals(0, BatteryEstimator.rangeKm(0))
     }
 
     @Test

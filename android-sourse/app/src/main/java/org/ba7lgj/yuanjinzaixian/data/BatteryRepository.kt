@@ -128,6 +128,7 @@ class BatteryRepository(
         }
         try {
             val detail = fetchDetailWithRetry(simei)
+            val address = fetchAddress(detail)
             val previousSample = database.voltageSampleDao().latest()
             val nowSec = detail.curTime ?: (System.currentTimeMillis() / 1000)
             val observedAt = detail.lastComTime
@@ -190,6 +191,7 @@ class BatteryRepository(
                 previous = BatteryStateStore.state.value.copy(
                     loggedIn = true,
                     deviceLabel = settings.displayName(),
+                    address = address ?: BatteryStateStore.state.value.address,
                     protectionVoltage = settings.protectionVoltage
                 ),
                 currentSettings = loadSettings()
@@ -212,6 +214,13 @@ class BatteryRepository(
     suspend fun immediateRefresh() {
         val settings = loadSettings()
         val simei = settings.deviceSimei?.takeIf { it.isNotBlank() } ?: return
+        val beforeDetail = fetchDetailWithRetry(simei)
+        fetchAddress(beforeDetail)?.let { address ->
+            BatteryStateStore.save(
+                context,
+                BatteryStateStore.state.value.copy(address = address)
+            )
+        }
         val sid = ensureSid()
         try {
             withContext(Dispatchers.IO) { api.requestImmediateLocation(simei, sid) }
@@ -269,41 +278,35 @@ class BatteryRepository(
                 now
             )
         }
-        val state = BatteryEstimator.evaluate(
+        var state = BatteryEstimator.evaluate(
             samples = samples,
             anchors = anchors,
             protectionVoltage = currentSettings.protectionVoltage,
             previous = previous,
             chargePending = database.chargeEventDao().latestPending() != null
         )
-        val protection = shouldAlertProtection(samples, currentSettings)
+        state = processFullRequest(state, now)
         val nextState = state.copy(protectionVoltage = currentSettings.protectionVoltage)
         BatteryStateStore.save(context, nextState)
-        if (protection) {
-            NotificationHelper.showProtection(context, nextState.voltageV)
-            saveSettings(currentSettings.copy(protectionAlerted = true))
-        } else if (
-            nextState.voltageV != null &&
-            nextState.voltageV > currentSettings.protectionVoltage + 0.5
-        ) {
-            saveSettings(currentSettings.copy(protectionAlerted = false))
-        }
         updateWidget()
     }
 
     suspend fun markFull() {
-        val state = BatteryStateStore.state.value
-        if (state.stableSocPercent == null) {
-            throw IllegalStateException("电压尚未稳定，不能写入满电锚点")
-        }
-        val voltage = state.voltageV ?: throw IllegalStateException("还没有可信电压")
-        database.batteryAnchorDao().insert(
-            BatteryAnchorEntity(
+        val now = System.currentTimeMillis() / 1000
+        val expiresAt = now + 24 * 60 * 60
+        database.anchorRequestDao().insert(
+            AnchorRequestEntity(
                 type = "full",
-                voltageV = voltage,
-                socPercent = 100,
-                createdAt = System.currentTimeMillis(),
-                method = "manual"
+                requestedAt = now,
+                expiresAt = expiresAt
+            )
+        )
+        BatteryStateStore.save(
+            context,
+            BatteryStateStore.state.value.copy(
+                fullRequestPending = true,
+                fullRequestExpiresAt = expiresAt,
+                fullRequestExpired = false
             )
         )
         refreshFromDatabase()
@@ -311,10 +314,7 @@ class BatteryRepository(
 
     suspend fun markEmpty() {
         val state = BatteryStateStore.state.value
-        if (state.stableSocPercent == null) {
-            throw IllegalStateException("电压尚未稳定，不能写入空电锚点")
-        }
-        val voltage = state.voltageV ?: throw IllegalStateException("还没有可信电压")
+        val voltage = state.voltageV ?: throw IllegalStateException("还没有电压")
         database.batteryAnchorDao().insert(
             BatteryAnchorEntity(
                 type = "empty",
@@ -322,6 +322,20 @@ class BatteryRepository(
                 socPercent = 0,
                 createdAt = System.currentTimeMillis(),
                 method = "manual"
+            )
+        )
+        refreshFromDatabase()
+    }
+
+    suspend fun resetCalibration() {
+        database.batteryAnchorDao().deleteAll()
+        database.anchorRequestDao().deleteAll()
+        BatteryStateStore.save(
+            context,
+            BatteryStateStore.state.value.copy(
+                fullRequestPending = false,
+                fullRequestExpiresAt = null,
+                fullRequestExpired = false
             )
         )
         refreshFromDatabase()
@@ -399,6 +413,15 @@ class BatteryRepository(
         }
     }
 
+    private suspend fun fetchAddress(detail: DeviceDetail): String? {
+        val lat = detail.lat ?: return null
+        val lon = detail.lon ?: return null
+        return runCatching {
+            val sid = ensureSid()
+            withContext(Dispatchers.IO) { api.batchGetAddress(lat, lon, sid) }
+        }.getOrNull()
+    }
+
     private suspend fun loginStored(): String {
         val password = credentials.getPassword()
             ?: throw BiotApiException(-1, "没有保存的密码")
@@ -434,35 +457,41 @@ class BatteryRepository(
         }
     }
 
-    private suspend fun shouldAlertProtection(
-        samples: List<VoltageSampleEntity>,
-        settings: AppSettingsEntity
-    ): Boolean {
-        if (settings.protectionAlerted) return false
-        val valid = samples
-            .filter {
-                it.voltageV != null &&
-                    !it.cacheSuspect &&
-                    it.ageSeconds <= 30 * 60
-            }
-            .sortedByDescending { it.observedAt }
-        if (valid.size < 2) return false
-        val latest = valid[0]
-        val previous = valid[1]
-        val spacing = latest.observedAt - previous.observedAt
-        val sameDistance = if (
-            latest.dayDistanceKm != null && previous.dayDistanceKm != null
-        ) {
-            abs(latest.dayDistanceKm - previous.dayDistanceKm) < 0.05
-        } else {
-            true
+    private suspend fun processFullRequest(
+        state: BatteryState,
+        now: Long
+    ): BatteryState {
+        val request = database.anchorRequestDao().latestPending("full") ?: return state
+        if (now > request.expiresAt) {
+            database.anchorRequestDao().resolve(request.id, "expired")
+            return state.copy(
+                fullRequestPending = false,
+                fullRequestExpiresAt = request.expiresAt,
+                fullRequestExpired = true
+            )
         }
-        return sameDistance &&
-            spacing >= 15 * 60 &&
-            latest.state != "e_line_down" &&
-            latest.voltageV!! <= settings.protectionVoltage &&
-            previous.voltageV!! <= settings.protectionVoltage &&
-            latest.restSeconds >= 30 * 60
+        if (state.stableSocPercent != null && state.voltageV != null) {
+            database.batteryAnchorDao().insert(
+                BatteryAnchorEntity(
+                    type = "full",
+                    voltageV = state.voltageV,
+                    socPercent = 100,
+                    createdAt = now,
+                    method = "pending_stable"
+                )
+            )
+            database.anchorRequestDao().resolve(request.id, "completed")
+            return state.copy(
+                fullRequestPending = false,
+                fullRequestExpiresAt = request.expiresAt,
+                fullRequestExpired = false
+            )
+        }
+        return state.copy(
+            fullRequestPending = true,
+            fullRequestExpiresAt = request.expiresAt,
+            fullRequestExpired = false
+        )
     }
 
     private suspend fun estimatorAnchors(): EstimatorAnchors =

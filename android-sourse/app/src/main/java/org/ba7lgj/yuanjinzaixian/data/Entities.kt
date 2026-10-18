@@ -41,6 +41,15 @@ data class BatteryAnchorEntity(
     val method: String
 )
 
+@Entity(tableName = "anchor_requests")
+data class AnchorRequestEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val type: String,
+    val requestedAt: Long,
+    val expiresAt: Long,
+    val status: String = "pending"
+)
+
 @Entity(tableName = "charge_events")
 data class ChargeEventEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

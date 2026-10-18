@@ -1,21 +1,28 @@
 package org.ba7lgj.yuanjinzaixian
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,16 +45,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -87,6 +99,7 @@ private fun BatteryApp(viewModel: MainViewModel = viewModel()) {
     val state by viewModel.battery.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var askedNotification by rememberSaveable { mutableStateOf(false) }
+    var lastBackAt by remember { mutableStateOf(0L) }
     val notificationPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
@@ -116,6 +129,21 @@ private fun BatteryApp(viewModel: MainViewModel = viewModel()) {
         }
     }
 
+    BackHandler {
+        when (ui.screen) {
+            AppScreen.HOME, AppScreen.LOGIN, AppScreen.DEVICES -> {
+                val now = System.currentTimeMillis()
+                if (now - lastBackAt < 2_000L) {
+                    (context as? Activity)?.finish()
+                } else {
+                    lastBackAt = now
+                    Toast.makeText(context, "再按一次返回退出", Toast.LENGTH_SHORT).show()
+                }
+            }
+            else -> viewModel.openHome()
+        }
+    }
+
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Surface(
             modifier = Modifier
@@ -126,8 +154,8 @@ private fun BatteryApp(viewModel: MainViewModel = viewModel()) {
             when (ui.screen) {
                 AppScreen.LOGIN -> LoginScreen(ui, viewModel)
                 AppScreen.DEVICES -> DeviceScreen(ui, viewModel)
-                AppScreen.HOME -> HomeScreen(ui, state, viewModel)
-                AppScreen.SETTINGS -> SettingsScreen(ui, viewModel, context)
+                AppScreen.HOME -> CompactHomeScreen(ui, state, viewModel)
+                AppScreen.SETTINGS -> CompactSettingsScreen(ui, state, viewModel, context)
                 AppScreen.DIAGNOSTICS -> DiagnosticsScreen(ui, viewModel)
             }
         }
@@ -235,6 +263,275 @@ private fun DeviceScreen(ui: UiState, viewModel: MainViewModel) {
                     }
                 }
             }
+        }
+        ui.error?.let { ErrorText(it) }
+    }
+}
+
+@Composable
+private fun CompactHomeScreen(ui: UiState, state: BatteryState, viewModel: MainViewModel) {
+    val displaySoc = state.displaySocPercent
+        ?: state.socPercent
+        ?: state.instantSocPercent
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_aima),
+                contentDescription = "爱玛",
+                modifier = Modifier.size(30.dp)
+            )
+            Spacer(Modifier.size(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    ui.deviceLabel ?: "我的车",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    state.address ?: "地址 --",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            TextButton(onClick = { viewModel.openSettings() }) {
+                Text("设置")
+            }
+        }
+        if (state.status != BatteryStatus.STABLE && ui.chartSamples.size >= 2) {
+            VoltageChartCard(ui.chartSamples, state)
+        }
+        Spacer(Modifier.height(10.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            if (
+                                state.status == BatteryStatus.STABLE &&
+                                !state.stale &&
+                                state.rangeKm != null
+                            ) {
+                                "预计 ${state.rangeKm} km"
+                            } else {
+                                displaySoc?.let { "$it%" } ?: "--"
+                            },
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "电量预估",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Text(
+                        state.voltageV?.let { "%.2f V".format(it) } ?: "--",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                AppBatteryBar(displaySoc ?: 0)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    statusText(state),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        if (state.fullRequestPending) {
+            Text(
+                "满电标定：等待电压稳定",
+                modifier = Modifier.padding(top = 8.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else if (state.fullRequestExpired) {
+            Text(
+                "满电标定：已失效",
+                modifier = Modifier.padding(top = 8.dp),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        Text(
+            "最后数据 ${state.voltageObservedAt?.let(::formatTime) ?: "--"}",
+            modifier = Modifier.padding(top = 8.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        ui.error?.let { ErrorText(it) }
+    }
+}
+
+@Composable
+private fun AppBatteryBar(socPercent: Int) {
+    val soc = socPercent.coerceIn(0, 100)
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(26.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(Color(0xFFF2F2EE))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(soc / 100f)
+                    .background(Color(0xFF4CAF50))
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(12.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text("E", fontSize = 7.sp)
+                Spacer(Modifier.weight(1f))
+                Text("F", fontSize = 7.sp)
+            }
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.weight(0.2f))
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .background(Color(0xFF8B8B86), RoundedCornerShape(2.dp))
+                )
+                Spacer(Modifier.weight(0.8f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactSettingsScreen(
+    ui: UiState,
+    state: BatteryState,
+    viewModel: MainViewModel,
+    context: android.content.Context
+) {
+    var nickname by rememberSaveable(ui.nickname) { mutableStateOf(ui.nickname) }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "设置",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = { viewModel.openHome() }) {
+                Text("返回")
+            }
+        }
+        InfoCard("账号", ui.account.ifBlank { "--" })
+        InfoCard("设备", ui.deviceLabel ?: "--")
+        OutlinedTextField(
+            value = nickname,
+            onValueChange = { nickname = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            label = { Text("车辆昵称") },
+            singleLine = true
+        )
+        Button(
+            onClick = { viewModel.saveNickname(nickname) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            Text("保存昵称")
+        }
+        Spacer(Modifier.height(16.dp))
+        Text("标定", style = MaterialTheme.typography.titleMedium)
+        Text(
+            when {
+                state.fullRequestPending -> "满电标定：等待电压稳定"
+                state.fullRequestExpired -> "满电标定：已失效"
+                else -> "满电标定：未标记"
+            },
+            modifier = Modifier.padding(top = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { viewModel.markFull() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("标记充满")
+            }
+            OutlinedButton(
+                onClick = { viewModel.markEmpty() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("标记空电")
+            }
+        }
+        TextButton(onClick = { viewModel.resetCalibration() }) {
+            Text("重置满/空标定")
+        }
+        Spacer(Modifier.height(12.dp))
+        Button(
+            onClick = {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(android.net.Uri.parse("package:${context.packageName}"))
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("打开应用设置 / 电池优化")
+        }
+        Text(
+            "华为/荣耀建议：允许自启动、允许后台活动、关闭电池优化。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+        OutlinedButton(
+            onClick = { viewModel.openDiagnostics() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        ) {
+            Text("诊断与最近采样")
+        }
+        OutlinedButton(
+            onClick = { viewModel.logout() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            Text("退出登录并清除凭证")
         }
         ui.error?.let { ErrorText(it) }
     }
