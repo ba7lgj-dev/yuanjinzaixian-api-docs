@@ -195,7 +195,7 @@ class RefreshBatteryAction : ActionCallback {
         parameters: ActionParameters
     ) {
         val app = context.applicationContext as? YuanJinApplication ?: return
-        runCatching { app.container.repository.sample() }
+        runCatching { app.container.repository.immediateRefresh() }
         BatteryWidget().updateAll(context)
     }
 }

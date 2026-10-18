@@ -109,6 +109,17 @@ class BiotApi {
         )
     }
 
+    fun requestImmediateLocation(simei: String, sid: String) {
+        post(
+            "device",
+            "Cmd",
+            JSONObject()
+                .put("simei", simei)
+                .put("type", "e_cmd_query_location"),
+            sid
+        )
+    }
+
     private fun post(
         module: String,
         func: String,

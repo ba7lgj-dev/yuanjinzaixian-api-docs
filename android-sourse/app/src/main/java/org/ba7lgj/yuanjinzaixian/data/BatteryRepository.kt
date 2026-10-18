@@ -2,6 +2,7 @@ package org.ba7lgj.yuanjinzaixian.data
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.ba7lgj.yuanjinzaixian.domain.BatteryEstimator
 import org.ba7lgj.yuanjinzaixian.domain.BatteryState
@@ -206,6 +207,33 @@ class BatteryRepository(
             )
             throw error
         }
+    }
+
+    suspend fun immediateRefresh() {
+        val settings = loadSettings()
+        val simei = settings.deviceSimei?.takeIf { it.isNotBlank() } ?: return
+        val sid = ensureSid()
+        try {
+            withContext(Dispatchers.IO) { api.requestImmediateLocation(simei, sid) }
+        } catch (error: BiotApiException) {
+            if (error.code != BiotApi.SESSION_EXPIRED) throw error
+            credentials.saveSid("")
+            val freshSid = loginStored()
+            withContext(Dispatchers.IO) { api.requestImmediateLocation(simei, freshSid) }
+        }
+        val before = database.voltageSampleDao().latest()?.lastComTime
+        var lastError: Throwable? = null
+        repeat(4) { attempt ->
+            delay(if (attempt == 0) 3_000L else 2_000L)
+            try {
+                sample()
+                val after = database.voltageSampleDao().latest()?.lastComTime
+                if (after != null && after != before) return
+            } catch (error: Throwable) {
+                lastError = error
+            }
+        }
+        lastError?.let { throw it }
     }
 
     suspend fun refreshFromDatabase() {
