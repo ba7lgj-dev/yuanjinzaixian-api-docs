@@ -1,0 +1,16 @@
+# 远近在线 API 文档项目
+
+> 项目内保存了 `https://api.zbiot.cc/` 的完整公开接口文档快照：12 个业务模块、135 个接口。
+
+## Start here
+
+- [docs/zbiot-api/README.md](docs/zbiot-api/README.md): 文档总入口、调用模型、认证、限频与分页规则
+- [docs/zbiot-api/llms.txt](docs/zbiot-api/llms.txt): 文档专用的 AI 索引
+- [docs/zbiot-api/endpoint-index.json](docs/zbiot-api/endpoint-index.json): 全部接口的轻量检索索引
+- [docs/zbiot-api/api-index.json](docs/zbiot-api/api-index.json): 全部接口的完整字段、说明与示例
+- [docs/zbiot-api/llms-full.txt](docs/zbiot-api/llms-full.txt): 完整全文
+
+## Source
+
+- [docs/zbiot-api/source/](docs/zbiot-api/source/): 站点原始 TXT 文档与页面抓取快照
+- [docs/zbiot-api/manifest.json](docs/zbiot-api/manifest.json): 文件哈希、覆盖统计和采集清单

@@ -1,0 +1,217 @@
+{
+  "source_url": "https://api.zbiot.cc/",
+  "fetched_at": "2026-10-18T13:12:05+08:00",
+  "coverage": {
+    "modules": 12,
+    "endpoints": 135
+  },
+  "source_files": [
+    {
+      "path": "source/_site-api.js",
+      "bytes": 1160,
+      "sha256": "f5d4a4c924a48218aa49f55024ccd67605a0a2e7706d4e10e36214189c8ef73d"
+    },
+    {
+      "path": "source/_site-index.html",
+      "bytes": 31214,
+      "sha256": "e8ee8b508b21fc48b14a9c298486953cd3ce0fb44e940e79e403ebae4f6dcbde"
+    },
+    {
+      "path": "source/sim卡(sim).txt",
+      "bytes": 129705,
+      "sha256": "ee58fe2d90f8396ff3bfe6ad3ef17e3ee0ee8fdb8ffb7e7e93c62ee1eb65b935"
+    },
+    {
+      "path": "source/前言.txt",
+      "bytes": 10631,
+      "sha256": "0fa9e8c561a4feacd6851688ee0b73045b99302166cb5e04094e70290235a264"
+    },
+    {
+      "path": "source/围栏(fence).txt",
+      "bytes": 60314,
+      "sha256": "c695b23352a855fc4941e870854eb0f283c511d104d96ace34d48b15a914ac34"
+    },
+    {
+      "path": "source/坐标系转换代码.txt",
+      "bytes": 4448,
+      "sha256": "d9a279e65730bd6384b0337406b5d6382252c0acbc8ad2f22abfec4068cdd2b4"
+    },
+    {
+      "path": "source/定时开关机(timerswitch).txt",
+      "bytes": 16787,
+      "sha256": "eea1425a48eb1e1c9da2435098c43b855bdc1c78399022cf809b4252d3bb7a43"
+    },
+    {
+      "path": "source/打卡(attendance).txt",
+      "bytes": 20433,
+      "sha256": "7fc835370247fb36cebd48834a19c7afd76c8c506f734ac29b2dcf749d693a92"
+    },
+    {
+      "path": "source/报警(alarm).txt",
+      "bytes": 520602,
+      "sha256": "3fc9fc5678b03545bfc5d0d38e77646cb211222f5366d1c88ff9bdabc8e97728"
+    },
+    {
+      "path": "source/模式(loc).txt",
+      "bytes": 72076,
+      "sha256": "b7ef31f1ec7ae0a4a3a9d084dfcce7d3f62f5594dc04e5a39b77b8ad949944e2"
+    },
+    {
+      "path": "source/温度、湿度(temphumi).txt",
+      "bytes": 9514,
+      "sha256": "1e57bbf9f127e4541ee7843350a1fa7943f2709f0a97fe04fa77e1cdc900cae7"
+    },
+    {
+      "path": "source/统计(summary).txt",
+      "bytes": 68428,
+      "sha256": "60c7cee732c2e68d7229025fe174c828b28d675b325359b2cadf8b439c552340"
+    },
+    {
+      "path": "source/设备(device).txt",
+      "bytes": 468559,
+      "sha256": "98dc9f395f80aaea62ee20604b94ee68511e817456375e30f2581884c6924694"
+    },
+    {
+      "path": "source/账户(user).txt",
+      "bytes": 257346,
+      "sha256": "5505413c09aba95d11418fcd8740cbe674af890de8c1e69d93825f71ec08bae3"
+    },
+    {
+      "path": "source/车组(family).txt",
+      "bytes": 234095,
+      "sha256": "e098faed452d51094ad500e85444542513b670bd1879eda25aa59db7c927bee3"
+    },
+    {
+      "path": "source/轨迹(location).txt",
+      "bytes": 151835,
+      "sha256": "edadd7005daf7c8418612ce6e75663eacf0f9434660fe245cc1cb6b55887f8ca"
+    }
+  ],
+  "generated_files": [
+    {
+      "path": "all-api.md",
+      "bytes": 651938,
+      "sha256": "b5060b60ab91afc9de6f758fd34979d1858a9dfd877f4b3d2d007ad83e7cac79"
+    },
+    {
+      "path": "api-index.json",
+      "bytes": 993648,
+      "sha256": "4aa7f2f44355f0a428c45c860b964e00fd1f07bf734f3c2ac0a8caf623e892e3"
+    },
+    {
+      "path": "endpoint-index.json",
+      "bytes": 116444,
+      "sha256": "e7d5f24777b01fc839975eca81013e565bc8a553051bb06e705322a20e839fc7"
+    },
+    {
+      "path": "guides/coordinate-conversion.md",
+      "bytes": 4562,
+      "sha256": "ee2d76a9289659990c79d9335711b2a506402a27868f67d95e2395158b4974dc"
+    },
+    {
+      "path": "guides/overview.md",
+      "bytes": 11599,
+      "sha256": "6ed26b1448a079be1602f427aae65ce3aeb50b9a06b60cea8fe9524da6c314c1"
+    },
+    {
+      "path": "llms-full.txt",
+      "bytes": 671277,
+      "sha256": "a514f50b40c3ef7596fe19eb16df64ffe9acfd0cbcf0e34135cde9688e27a982"
+    },
+    {
+      "path": "llms.txt",
+      "bytes": 1964,
+      "sha256": "d5f66f54cf192772bbf2032773e7f79d35b9f7a6f1f84421af687fc5ea29fdb5"
+    },
+    {
+      "path": "modules/alarm.md",
+      "bytes": 220493,
+      "sha256": "f12a61e39ba0f51fb9ed223c82145ce360600688db08e9ab70c18be0479c6e8b"
+    },
+    {
+      "path": "modules/attendance.md",
+      "bytes": 8763,
+      "sha256": "6ab141cbe86bb2b292d4707b909ae000bae68637e18b43f842f10cf7a72ce291"
+    },
+    {
+      "path": "modules/device.md",
+      "bytes": 104317,
+      "sha256": "69bacb70fb5f30c57f20f87acd661a0d4017ced3d6d68a6a7f284d214b1e96bf"
+    },
+    {
+      "path": "modules/family.md",
+      "bytes": 58636,
+      "sha256": "4a41050733ff6bf5413a393c2a5d4680de4b3b0de8327a7e8170cc1d5a02eabc"
+    },
+    {
+      "path": "modules/fence.md",
+      "bytes": 14536,
+      "sha256": "8f32ce6833c61d9e9c2178d1c815af588af4f0f3176dc290a2ae52f7059031ce"
+    },
+    {
+      "path": "modules/loc.md",
+      "bytes": 28456,
+      "sha256": "5397ef2fad955e4864252f534155ff0fa2690783669eacd53e9cc074d34a72d9"
+    },
+    {
+      "path": "modules/location.md",
+      "bytes": 45107,
+      "sha256": "0e7509abd2faf3d3720b43825ea6a5698f9ce7d42d07a8de1d5eed5b7e5edbe7"
+    },
+    {
+      "path": "modules/sim.md",
+      "bytes": 46454,
+      "sha256": "670dedae35737e7d0df16bd2a68f8fd4d09371c5a13801daeadf634a1c9f570f"
+    },
+    {
+      "path": "modules/summary.md",
+      "bytes": 26555,
+      "sha256": "0f7a7398096f295f942d0513e65d82a5c356eb34e813da01a2759ff859a3c03e"
+    },
+    {
+      "path": "modules/temphumi.md",
+      "bytes": 4017,
+      "sha256": "fbb7e07705a28733899d3da5a7592b9666590893e7ad539952c631f8cd6fc849"
+    },
+    {
+      "path": "modules/timerswitch.md",
+      "bytes": 6153,
+      "sha256": "405457d4ac7263c481ca097c37d775f1758093b01da7d382c04022ba2b147a6a"
+    },
+    {
+      "path": "modules/user.md",
+      "bytes": 87469,
+      "sha256": "70f224af4b3520ee7f2a52c7bf0a9726c00e23e34ef344e2717dbd817a52a75e"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4001,
+      "sha256": "68dec37c29537be873f8f4b59537ffc9b76f7a3ccd047abba5e6b17e1417ed09"
+    }
+  ],
+  "module_endpoint_counts": {
+    "user": 20,
+    "family": 21,
+    "device": 21,
+    "location": 9,
+    "alarm": 17,
+    "fence": 5,
+    "sim": 14,
+    "loc": 12,
+    "timerswitch": 3,
+    "summary": 7,
+    "temphumi": 2,
+    "attendance": 4
+  },
+  "validation": {
+    "index_and_detail_match": true,
+    "duplicate_endpoints": 0,
+    "expected_endpoint_count": 135,
+    "actual_endpoint_count": 135,
+    "request_fields_total": 1239,
+    "response_fields_total": 1435,
+    "json_examples_parsed": 270,
+    "missing_envelope_fields": 0,
+    "empty_field_definitions": 0
+  }
+}

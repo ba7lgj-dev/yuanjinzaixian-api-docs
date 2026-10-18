@@ -1,0 +1,462 @@
+# 电子围栏 (Fence)
+
+- 模块标识：`fence`
+- 接口数量：5
+- 原始文档：`source/围栏(fence).txt`
+- 正式环境：`http://cciot.cc/mapi`
+- 测试环境：`http://csapp.cciot.cc/mapi`
+- 开发环境：`http://192.168.1.105/mapi`
+- 模块负责人：hexiaoqin,fushengyou,hangjl
+
+## 接口索引
+
+| 接口 | 名称 | 请求字段数 | 返回字段数 |
+| --- | --- | ---: | ---: |
+| [`Add`](#fence-Add) | 添加围栏 | 20 | 9 |
+| [`Modify`](#fence-Modify) | 修改围栏 | 20 | 2 |
+| [`Get`](#fence-Get) | 获取围栏 | 6 | 19 |
+| [`Del`](#fence-Del) | 删除围栏 | 4 | 2 |
+| [`BatchDel`](#fence-BatchDel) | 批量删除围栏 | 4 | 2 |
+
+## 接口详情
+
+<a id="fence-Add"></a>
+## 添加围栏 (`Add`)
+
+- 接口 ID：`fence.Add`
+- 模块：`fence`
+- 用途：添加围栏
+- 原始位置：`source/围栏(fence).txt` 第 21 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1，围栏名称只支持中文字母数字且长度不超过20个字符；
+2，一次只能添加一种类型的围栏；
+3，多边形围栏至少3个点最多50个点；
+4，ofence设置的围栏类型需要和type一致；
+5，各围栏不能重名；
+6，不支持浮点数；
+7，最多添加10个围栏；
+8，需要添加围栏权限；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Add |
+| `module` | `string` | 模块名,fence |
+| `params` | `object` | 参数列表 |
+| `params.fence_switch` | `string` | 围栏报警<br>e_fence_in 进围栏<br>e_fence_out 出围栏<br>e_fence_in_out 进出围栏<br>e_fence_close 关闭 |
+| `params.name` | `string` | 围栏名称 |
+| `params.ofence` | `object` | 围栏的具体信息 |
+| `params.ofence.circle` | `object` | 当围栏为圆形时设置 |
+| `params.ofence.circle.lat` | `number` | 圆心的维度，原始坐标系，原值*1000000 |
+| `params.ofence.circle.lon` | `number` | 圆心的经度，原始坐标系，原值*1000000 |
+| `params.ofence.circle.radius` | `number` | 半径，原值 |
+| `params.ofence.city` | `object` | 当围栏为地级市形时设置 |
+| `params.ofence.city.district` | `string` | 区名字 |
+| `params.ofence.city.name` | `string` | 城市名称 |
+| `params.ofence.polygon` | `object` | 当围栏为多边形时设置 |
+| `params.ofence.polygon.poit` | `array` | 城市名称 |
+| `params.ofence.polygon.poit.lat` | `number` | 维度，原始坐标系，原值*1000000 |
+| `params.ofence.polygon.poit.lon` | `number` | 经度，原始坐标系，原值*1000000 |
+| `params.sgid` | `string` | 设置一个车组里所有的设备围栏，账号登入可选填，设备登入无效 |
+| `params.simei` | `array` | 设备号列表，最多1000个,如果设备号登入或者设置sgid，可以不用填写 |
+| `params.type` | `string` | 围栏形状<br>e_type_circle 圆形围栏<br>e_type_city 地市级围栏<br>e_type_polygon 多边形围栏 |
+
+### 请求示例
+
+```json
+{
+  "module": "fence",
+  "func": "Add",
+  "params": {
+    "fence_switch": "e_fence_in|e_fence_out|e_fence_in_out|e_fence_close",
+    "name": "32ec7b22-3543-4245-a1b5-44e5fcfdccfd",
+    "ofence": {
+      "circle": {
+        "lat": 882308369,
+        "lon": 882308369,
+        "radius": 882308369
+      },
+      "city": {
+        "district": "01c30d59-d0a4-40a7-9093-922ef0c84a50",
+        "name": "07853dfd-4c66-4b61-8304-59b18c4acb21"
+      },
+      "polygon": {
+        "poit": [
+          {
+            "lat": 882308369,
+            "lon": 882308369
+          },
+          {
+            "lat": 882308369,
+            "lon": 882308369
+          },
+          {
+            "lat": 882308369,
+            "lon": 882308369
+          }
+        ]
+      }
+    },
+    "sgid": "528d29a1-cf0d-4f70-86ff-8e73194bffc9",
+    "simei": [
+      "ca2b8064-e0f1-4114-8f7a-1c550d9060d8",
+      "f884abac-5dd6-4ee2-aa72-428d1ff08045",
+      "7c9258ff-fa72-4c1e-9dfe-fd56c2cf92f3"
+    ],
+    "type": "e_type_circle|e_type_city|e_type_polygon"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `fail_imei` | `array` | 失败列表 |
+| `fail_imei.errcode` | `number` | 错误编码 |
+| `fail_imei.imei` | `number` | 用于前端展示 |
+| `fail_imei.message` | `string` | 失败原因 |
+| `suc_items` | `array` | 添加成功的围栏列表 |
+| `suc_items.imei` | `number` | 用于前端展示 |
+| `suc_items.sfid` | `string` | 新增围栏id |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "2d654f12-8fdc-4726-917c-3577ded99e24",
+  "fail_imei": [
+    {
+      "errcode": 282467839,
+      "imei": 282467839,
+      "message": "5e698bea-8808-4564-836e-67705afc2c5b"
+    },
+    {
+      "errcode": 282467839,
+      "imei": 282467839,
+      "message": "cec3325f-249f-4e0a-b712-87d489a09990"
+    },
+    {
+      "errcode": 282467839,
+      "imei": 282467839,
+      "message": "32362cd1-4483-4d93-a298-844775cff19f"
+    }
+  ],
+  "suc_items": [
+    {
+      "imei": 282467839,
+      "sfid": "55baf0d2-fa49-401c-84ff-48ba43080e16"
+    }
+  ]
+}
+```
+
+<a id="fence-Modify"></a>
+## 修改围栏 (`Modify`)
+
+- 接口 ID：`fence.Modify`
+- 模块：`fence`
+- 用途：修改围栏
+- 原始位置：`source/围栏(fence).txt` 第 177 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1，围栏名称只支持中文字母数字且长度不超过20个字符；
+2，一次只能添加一种类型的围栏；
+3，多边形围栏至少3个点最多50个点；
+4，ofence设置的围栏类型需要和type一致；
+5，各围栏不能重名；
+6，不支持浮点数；
+7，不可修改围栏类型；
+8，需要修改围栏权限；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Modify |
+| `module` | `string` | 模块名,fence |
+| `params` | `object` | 参数列表 |
+| `params.item` | `object` | 需要修改的围栏信息: |
+| `params.item.fence_switch` | `string` | 围栏报警,修改是可选填<br>e_fence_in 进围栏<br>e_fence_out 出围栏<br>e_fence_in_out 进出围栏<br>e_fence_close 关闭 |
+| `params.item.name` | `string` | 围栏名称,修改是可选填 |
+| `params.item.ofence` | `object` | 围栏信息,修改是可选填，根据具体的围栏类型，数据不同:（type为e_type_circle，有半径，经度 ，维度；type为e_type_city有地级市名称 ；e_type_polygon有地址列表',） |
+| `params.item.ofence.circle` | `object` | 当围栏为圆形时设置 |
+| `params.item.ofence.circle.lat` | `number` | 圆心的维度，原始坐标系，原值*1000000 |
+| `params.item.ofence.circle.lon` | `number` | 圆心的经度，原始坐标系，原值*1000000 |
+| `params.item.ofence.circle.radius` | `number` | 半径，原值 |
+| `params.item.ofence.city` | `object` | 当围栏为地级市形时设置 |
+| `params.item.ofence.city.district` | `string` | 区名字 |
+| `params.item.ofence.city.name` | `string` | 城市名称 |
+| `params.item.ofence.polygon` | `object` | 当围栏为多边形时设置 |
+| `params.item.ofence.polygon.poit` | `array` | 城市名称 |
+| `params.item.ofence.polygon.poit.lat` | `number` | 维度，原始坐标系，原值*1000000 |
+| `params.item.ofence.polygon.poit.lon` | `number` | 经度，原始坐标系，原值*1000000 |
+| `params.item.sfid` | `string` | 围栏id |
+| `params.item.type` | `string` | 围栏类型,修改是可选填<br>e_type_circle 圆形围栏<br>e_type_city 地市级围栏<br>e_type_polygon 多边形围栏 |
+
+### 请求示例
+
+```json
+{
+  "module": "fence",
+  "func": "Modify",
+  "params": {
+    "item": {
+      "fence_switch": "e_fence_in|e_fence_out|e_fence_in_out|e_fence_close",
+      "name": "86fc136b-e010-4558-b66a-849e0c139e93",
+      "ofence": {
+        "circle": {
+          "lat": 1221354766,
+          "lon": 1221354766,
+          "radius": 1221354766
+        },
+        "city": {
+          "district": "375de0f9-a0b9-45ea-8071-6570bed7aa8e",
+          "name": "3d2684c0-b225-4245-8482-8db90fb09c0e"
+        },
+        "polygon": {
+          "poit": [
+            {
+              "lat": 1221354766,
+              "lon": 1221354766
+            }
+          ]
+        }
+      },
+      "sfid": "bce17398-5357-4eee-8927-15472c4358f1",
+      "type": "e_type_circle|e_type_city|e_type_polygon"
+    }
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "0109c6e7-ff0c-4cd6-8037-27bf423ea828"
+}
+```
+
+<a id="fence-Get"></a>
+## 获取围栏 (`Get`)
+
+- 接口 ID：`fence.Get`
+- 模块：`fence`
+- 用途：获取围栏
+- 原始位置：`source/围栏(fence).txt` 第 285 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Get |
+| `module` | `string` | 模块名,fence |
+| `params` | `object` | 参数列表 |
+| `params.last_sfid` | `string` | 瀑布流上一条数据id,非必填,默认从第一条数据开始拉取 |
+| `params.limit_size` | `number` | 显示条数,非必填，默认20 |
+| `params.simei` | `string` | 设备号,如果设备号登入，可以不用填写 |
+
+### 请求示例
+
+```json
+{
+  "module": "fence",
+  "func": "Get",
+  "params": {
+    "last_sfid": "027e24d8-7f81-48ae-9bc9-c18b223d38e4",
+    "limit_size": 1411736310,
+    "simei": "8602399d-199b-4366-a7db-a63e2d97b194"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` | 围栏信息列表 |
+| `items.fence_switch` | `string` | 围栏报警,修改是可选填<br>e_fence_in 进围栏<br>e_fence_out 出围栏<br>e_fence_in_out 进出围栏<br>e_fence_close 关闭 |
+| `items.name` | `string` | 围栏名称,修改是可选填 |
+| `items.ofence` | `object` | 围栏信息,修改是可选填，根据具体的围栏类型，数据不同:（type为e_type_circle，有半径，经度 ，维度；type为e_type_city有地级市名称 ；e_type_polygon有地址列表',） |
+| `items.ofence.circle` | `object` | 当围栏为圆形时设置 |
+| `items.ofence.circle.lat` | `number` | 圆心的维度，原始坐标系，原值*1000000 |
+| `items.ofence.circle.lon` | `number` | 圆心的经度，原始坐标系，原值*1000000 |
+| `items.ofence.circle.radius` | `number` | 半径，原值 |
+| `items.ofence.city` | `object` | 当围栏为地级市形时设置 |
+| `items.ofence.city.district` | `string` | 区名字 |
+| `items.ofence.city.name` | `string` | 城市名称 |
+| `items.ofence.polygon` | `object` | 当围栏为多边形时设置 |
+| `items.ofence.polygon.poit` | `array` | 城市名称 |
+| `items.ofence.polygon.poit.lat` | `number` | 维度，原始坐标系，原值*1000000 |
+| `items.ofence.polygon.poit.lon` | `number` | 经度，原始坐标系，原值*1000000 |
+| `items.sfid` | `string` | 围栏id |
+| `items.type` | `string` | 围栏类型,修改是可选填<br>e_type_circle 圆形围栏<br>e_type_city 地市级围栏<br>e_type_polygon 多边形围栏 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "07358553-6686-48ce-a3d8-e09d6d674a8d",
+  "items": [
+    {
+      "fence_switch": "e_fence_in|e_fence_out|e_fence_in_out|e_fence_close",
+      "name": "678ac5ca-1bcc-4eb0-a2d8-a8cedf829074",
+      "ofence": {
+        "circle": {
+          "lat": 1868857212,
+          "lon": 1868857212,
+          "radius": 1868857212
+        },
+        "city": {
+          "district": "ceca5056-2599-4363-8021-aa82f3fb1426",
+          "name": "6039909c-e983-4b82-905b-73b180dfd954"
+        },
+        "polygon": {
+          "poit": [
+            {
+              "lat": 1868857212,
+              "lon": 1868857212
+            },
+            {
+              "lat": 1868857212,
+              "lon": 1868857212
+            },
+            {
+              "lat": 1868857212,
+              "lon": 1868857212
+            }
+          ]
+        }
+      },
+      "sfid": "d79bb391-8ea1-4a18-bc08-8cb7d82b7afb",
+      "type": "e_type_circle|e_type_city|e_type_polygon"
+    }
+  ]
+}
+```
+
+<a id="fence-Del"></a>
+## 删除围栏 (`Del`)
+
+- 接口 ID：`fence.Del`
+- 模块：`fence`
+- 用途：删除围栏
+- 原始位置：`source/围栏(fence).txt` 第 402 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1，需要删除围栏权限；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Del |
+| `module` | `string` | 模块名,fence |
+| `params` | `object` | 参数列表 |
+| `params.sfid` | `string` | 需要删除的围栏id |
+
+### 请求示例
+
+```json
+{
+  "module": "fence",
+  "func": "Del",
+  "params": {
+    "sfid": "b5e87fee-51b8-4ecc-8070-794e44bde411"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "20f2d8c5-f954-4605-aaee-57b72ca6a163"
+}
+```
+
+<a id="fence-BatchDel"></a>
+## 批量删除围栏 (`BatchDel`)
+
+- 接口 ID：`fence.BatchDel`
+- 模块：`fence`
+- 用途：批量删除围栏
+- 原始位置：`source/围栏(fence).txt` 第 440 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,BatchDel |
+| `module` | `string` | 模块名,fence |
+| `params` | `object` | 参数列表 |
+| `params.sfid` | `array` | 需要删除的围栏id |
+
+### 请求示例
+
+```json
+{
+  "module": "fence",
+  "func": "BatchDel",
+  "params": {
+    "sfid": [
+      "a3eb79eb-2c80-411e-bb13-d4c4094df578",
+      "f3ab2aa2-ee9d-4272-a101-2982a8f89f7a",
+      "df827f1f-05b2-4e8d-b9a9-b00d2b06ba21",
+      "071f8bd2-ba92-47c7-b3aa-ea9785ede3dc"
+    ]
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "9ab8d890-4f1f-4eed-a1f4-3158f5ef9a6d"
+}
+```

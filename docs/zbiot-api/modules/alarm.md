@@ -1,0 +1,2023 @@
+# 设备报警 (Alarm)
+
+- 模块标识：`alarm`
+- 接口数量：17
+- 原始文档：`source/报警(alarm).txt`
+- 正式环境：`http://cciot.cc/mapi`
+- 测试环境：`http://cs.iotiot.cc/mapi`
+- 开发环境：`http://192.168.1.20/mapi`
+- 模块负责人：hangjl,fushengyou,guohaoqin,fange
+
+## 接口索引
+
+| 接口 | 名称 | 请求字段数 | 返回字段数 |
+| --- | --- | ---: | ---: |
+| [`Get`](#alarm-Get) | 获取报警信息 | 21 | 64 |
+| [`Del`](#alarm-Del) | 删除报警信息 | 8 | 2 |
+| [`GetStat`](#alarm-GetStat) | 获取设备报警统计 | 14 | 44 |
+| [`BatchDel`](#alarm-BatchDel) | 批量删除告警 | 15 | 2 |
+| [`GetAlarmTypeList`](#alarm-GetAlarmTypeList) | 获取可以筛选的告警类型列表 | 6 | 8 |
+| [`GetFamilyDaySummary`](#alarm-GetFamilyDaySummary) | 获取组织日统计 | 7 | 19 |
+| [`GetFamilyAlarmByType`](#alarm-GetFamilyAlarmByType) | 通过报警类型统计 | 16 | 17 |
+| [`GetSummaryByDate`](#alarm-GetSummaryByDate) | 通过日期获取统计 | 12 | 10 |
+| [`GetAlarmTypeSummary`](#alarm-GetAlarmTypeSummary) | 告警类型统计 | 16 | 23 |
+| [`AlarmAck`](#alarm-AlarmAck) | 告警确认 | 11 | 2 |
+| [`GetAlarmStatusSummary`](#alarm-GetAlarmStatusSummary) | 获取告警确认状态统计 | 5 | 5 |
+| [`GetAlarmAck`](#alarm-GetAlarmAck) | 获取告警确认详情 | 4 | 5 |
+| [`GetLastAlarm`](#alarm-GetLastAlarm) | 获取最新的告警 | 11 | 11 |
+| [`SetFamilyAlarm`](#alarm-SetFamilyAlarm) | 设置组织告警 | 34 | 2 |
+| [`GetFamilyAlarm`](#alarm-GetFamilyAlarm) | 获取组织告警 | 4 | 32 |
+| [`GetImeiDailyAlarmRank`](#alarm-GetImeiDailyAlarmRank) | 获取设备日告警数量排行 | 7 | 7 |
+| [`SendCarPush`](#alarm-SendCarPush) | 车辆报警推送 | 25 | 2 |
+
+## 接口详情
+
+<a id="alarm-Get"></a>
+## 获取报警信息 (`Get`)
+
+- 接口 ID：`alarm.Get`
+- 模块：`alarm`
+- 用途：获取报警信息
+- 原始位置：`source/报警(alarm).txt` 第 45 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1,报警消息最高不超过100；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Get |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.duration_begin` | `number` | 筛选超速报警持续时长大于该时间 |
+| `params.end_time` | `number` | 结束时间，如果有，必须&gt;start_time，如果没有，默认从此刻时间拉取 |
+| `params.get_child` | `boolean` | 是否包含下级 |
+| `params.get_status_total` | `boolean` | 获取状态统计 |
+| `params.imei` | `number` | 设备号，传了该参数，组织id必填 |
+| `params.is_desc` | `boolean` | 按照时间的降序排序 |
+| `params.is_summary` | `boolean` | 是否需要统计数据，默认不需要 |
+| `params.last_fencename` | `string` | 上次请求返回的最后一个的围栏名称 |
+| `params.last_imei` | `number` | 上次请求返回的最后一个的imei，首次请求可以不填 |
+| `params.last_time` | `number` | 上次请求返回的最后一个的时间，首次请求可以不填 |
+| `params.last_type` | `string` | 上次请求返回的最后一个的类型，首次请求可以不填<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `params.limit_size` | `number` | 数据的限制条数，默认20条,最高不超过100 |
+| `params.not_type` | `array` | 不需要的告警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `params.sfamilyid` | `string` | 需要拉取的组织id,如果设备登入，不填 |
+| `params.simei` | `array` | 设备列表,选填，如果设备登入不填,注意只能筛选同一个sfamilyid下的设备 |
+| `params.start_time` | `number` | 开始的时间戳，可以不用填写 |
+| `params.status` | `string` | 告警状态<br>e_alarm_status_unack 待处理<br>e_alarm_status_ack 已处理 |
+| `params.type` | `array` | 需要过滤的类型，可以不用填写<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "Get",
+  "params": {
+    "duration_begin": 1490899539,
+    "end_time": 1490899539,
+    "get_child": false,
+    "get_status_total": false,
+    "imei": 1490899539,
+    "is_desc": false,
+    "is_summary": false,
+    "last_fencename": "f775f0aa-89f8-4272-bbb1-48af19f9b911",
+    "last_imei": 1490899539,
+    "last_time": 1490899539,
+    "last_type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+    "limit_size": 1490899539,
+    "not_type": [
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    ],
+    "sfamilyid": "44242ade-39de-4828-9e3d-a193a7b98ab8",
+    "simei": [
+      "bcbcfb8c-051b-4dde-ac86-cc1f25e6efd3"
+    ],
+    "start_time": 1490899539,
+    "status": "e_alarm_status_unack|e_alarm_status_ack",
+    "type": [
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    ]
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `ack_total` | `number` | 已处理告警数量，get_status_total为true时返回 |
+| `dev_ack_list` | `array` | 需要下发指令给设备确认的告警列表， 传入simei或者设备号登录时返回 |
+| `dev_ack_list.alarm_id` | `number` | 告警类型对应的id |
+| `dev_ack_list.alarm_name` | `string` | 报警名称 |
+| `dev_ack_list.imei` | `number` | 设备号 |
+| `dev_ack_list.time` | `number` | 触发报警的时间 |
+| `dev_ack_list.type` | `string` | 报警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` | 报警列表 |
+| `items.acc_power` | `string` | 电源状态accele<br>e_acc_power_charge 充电<br>e_acc_power_interuupt 断电 |
+| `items.acc_state` | `string` | acc状态<br>e_acc_close 关闭<br>e_acc_open 打开<br>e_acc_empty 为空 |
+| `items.addr` | `string` | 高德解析地址，格式：lat,lon |
+| `items.alarm_id` | `number` | 告警类型对应的id |
+| `items.alarm_name` | `string` | 告警名称 |
+| `items.allow_delete` | `boolean` | 允许删除 |
+| `items.altitude` | `number` | 海拔 |
+| `items.bd_satellite` | `number` | 北斗卫星个数 |
+| `items.bind_familyname` | `string` | is_summary为true时返回，绑定终端组织名称 |
+| `items.bind_phone` | `string` | is_summary为true时返回，绑定手机号 |
+| `items.bind_sfamily` | `string` | is_summary为true时返回，绑定终端组织id |
+| `items.bind_time` | `number` | 绑定时间 |
+| `items.car_number` | `string` | 车牌号 |
+| `items.check` | `number` | 该报警是否需要确认,1需要确认，2已确认 |
+| `items.day_distance` | `number` | 日里程，精确到米，如“367” |
+| `items.devspeed` | `number` | 速度 |
+| `items.duration` | `number` | 超速告警持续时间 |
+| `items.external_voltage` | `string` | 外电电压 |
+| `items.extra_info` | `object` | 附加信息 |
+| `items.extra_info.contact_name` | `string` | 联系人姓名 |
+| `items.extra_info.contact_phone` | `string` | 联系人电话 |
+| `items.extra_info.contact_remark` | `string` | 联系人备注 |
+| `items.familyname` | `string` | is_summary为true时返回，组织名称 |
+| `items.fencename` | `string` | 围栏名称 |
+| `items.finish_time` | `number` | 超速告警持续结束时间 |
+| `items.frame_num` | `string` | 车架号, 使用setdetail设置车架号需添加additional字段，additional为字典类型 |
+| `items.gen_family_name` | `string` | 告警产生时的组织名称 |
+| `items.gen_sfamilyid` | `string` | 告警产生时的组织的id |
+| `items.glonass_satellite` | `number` | 格洛纳斯卫星个数 |
+| `items.gps_satellite` | `number` | gps卫星个数 |
+| `items.groupname` | `string` | is_summary为true时返回，分组名称 |
+| `items.imei` | `number` | 发生报警的imei号,仅用作展示，后面的请求需要用到imei的请用simei |
+| `items.is_defend` | `boolean` | 是否设防 |
+| `items.loc_type` | `number` | 定位类型 |
+| `items.oil_state` | `string` | 油电状态<br>e_oil_normal 油电正常<br>e_oil_off 油电断开 |
+| `items.power` | `number` | 电量 |
+| `items.sackid` | `string` | 告警确认id |
+| `items.satellite_type` | `array` | 卫星定位类型<br>e_type_gps gps卫星<br>e_type_beidou 北斗卫星<br>e_type_glonass Glonass卫星 |
+| `items.sfamily` | `string` | is_summary为true时返回，组织id |
+| `items.sgid` | `string` | is_summary为true时返回，分组id |
+| `items.signa_type` | `number` | 信号类型,2G信号0，4G信号1 |
+| `items.signa_val` | `number` | 信号强度,卫星数量 |
+| `items.signal_rate` | `number` | 信号强度百分比值 |
+| `items.simei` | `string` | 发生报警的imei号,后续的请求，可能会用到这个simei, 该设备号仅可用于本模块的删除相关接口 |
+| `items.status` | `string` | 告警状态<br>e_alarm_status_unack 待处理<br>e_alarm_status_ack 已处理 |
+| `items.time` | `number` | 发生报警的时间戳 |
+| `items.type` | `string` | 报警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `items.version` | `string` | is_summary为true时返回，设备型号 |
+| `last_fencename` | `string` | 上次请求返回的最后一个的围栏名称 |
+| `last_imei` | `number` | 本次请求返回的最后一个的imei，注意可能与items返回的最后一条数据不一样 |
+| `last_time` | `number` | 本次请求返回的最后一个的时间，注意可能与items返回的最后一条数据不一样 |
+| `last_type` | `string` | 本次请求返回的最后一个的类型，注意可能与items返回的最后一条数据不一样<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `total` | `number` | 总数,只有在不翻页的时候返回 |
+| `unack_total` | `number` | 未处理告警数量，get_status_total为true时返回 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "ack_total": 1225512833,
+  "dev_ack_list": [
+    {
+      "alarm_id": 1225512833,
+      "alarm_name": "10db4d31-42a8-4a64-a919-d9d3f5ff523b",
+      "imei": 1225512833,
+      "time": 1225512833,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    },
+    {
+      "alarm_id": 1225512833,
+      "alarm_name": "3b953dcf-1fb8-4454-b50d-a0c46c4d03f6",
+      "imei": 1225512833,
+      "time": 1225512833,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    },
+    {
+      "alarm_id": 1225512833,
+      "alarm_name": "26bdd1fd-4899-4e0b-9c3d-0f0c3de06d6a",
+      "imei": 1225512833,
+      "time": 1225512833,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    },
+    {
+      "alarm_id": 1225512833,
+      "alarm_name": "2d019a27-959a-468c-a7e1-232f8aedbcee",
+      "imei": 1225512833,
+      "time": 1225512833,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    }
+  ],
+  "error_message": "6e952178-3ae0-4676-a3bf-e889b2cfeeb9",
+  "items": [
+    {
+      "acc_power": "e_acc_power_charge|e_acc_power_interuupt",
+      "acc_state": "e_acc_close|e_acc_open|e_acc_empty",
+      "addr": "c5d43c87-5289-42db-872f-307bf3df9359",
+      "alarm_id": 1225512833,
+      "alarm_name": "b5cd4490-e05f-4932-8d9d-2650a9fc50bf",
+      "allow_delete": false,
+      "altitude": 1225512833,
+      "bd_satellite": 1225512833,
+      "bind_familyname": "66879b6b-e61c-49db-85c0-eac138ec2792",
+      "bind_phone": "7f37e3f3-6bf2-4d24-b79c-09640e16817b",
+      "bind_sfamily": "dd8acae2-82ed-4757-8c71-cdd9e9a73727",
+      "bind_time": 1225512833,
+      "car_number": "fcdeb9b1-fe19-42a1-9fbe-81b762f41c23",
+      "check": 1225512833,
+      "day_distance": 1225512833,
+      "devspeed": 1225512833,
+      "duration": 1225512833,
+      "external_voltage": "a61f8afd-e57b-42a5-a5e7-c0e073cc2258",
+      "extra_info": {
+        "contact_name": "a172a610-07eb-404b-a97f-d88cce2d3a39",
+        "contact_phone": "3e1ebd76-d6ad-42ca-84ce-22f67d11ee6e",
+        "contact_remark": "9028176a-1ba6-4ec3-a1fe-9dd12dd5b4fb"
+      },
+      "familyname": "cfe3b216-d7e8-400d-8511-3b63d9a7c3a3",
+      "fencename": "75dde394-a513-42dd-b82d-cae4c6982d20",
+      "finish_time": 1225512833,
+      "frame_num": "41b02090-dbc6-45b6-8375-315944cfab91",
+      "gen_family_name": "4324f2b4-50b0-43e7-976b-26a2be835557",
+      "gen_sfamilyid": "8f9eb957-0132-40ee-bd07-3400f56b6076",
+      "glonass_satellite": 1225512833,
+      "gps_satellite": 1225512833,
+      "groupname": "c4aa8e39-5217-49af-8d5f-4607f712b5fa",
+      "imei": 1225512833,
+      "is_defend": false,
+      "loc_type": 1225512833,
+      "oil_state": "e_oil_normal|e_oil_off",
+      "power": 1225512833,
+      "sackid": "fe9bc596-601c-4f07-863c-a46d6fb91260",
+      "satellite_type": [
+        "e_type_gps|e_type_beidou|e_type_glonass",
+        "e_type_gps|e_type_beidou|e_type_glonass",
+        "e_type_gps|e_type_beidou|e_type_glonass"
+      ],
+      "sfamily": "3810f876-9041-4322-9386-b181ee85544d",
+      "sgid": "ef8ada2a-2a4c-44aa-9b57-dead545280c9",
+      "signa_type": 1225512833,
+      "signa_val": 1225512833,
+      "signal_rate": 1225512833,
+      "simei": "fc251874-8ace-4aad-810d-f993f0feb45c",
+      "status": "e_alarm_status_unack|e_alarm_status_ack",
+      "time": 1225512833,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "version": "3b125b07-5f04-41c6-a979-8cdd518db833"
+    },
+    {
+      "acc_power": "e_acc_power_charge|e_acc_power_interuupt",
+      "acc_state": "e_acc_close|e_acc_open|e_acc_empty",
+      "addr": "a22d4d28-56d9-4655-89b9-d89d5090e1fb",
+      "alarm_id": 1225512833,
+      "alarm_name": "571fc521-12e2-4f50-8981-1a5cd1ce706d",
+      "allow_delete": false,
+      "altitude": 1225512833,
+      "bd_satellite": 1225512833,
+      "bind_familyname": "814527fd-badc-4a07-8a0d-1a8d258a705d",
+      "bind_phone": "59816bd1-3609-4189-a639-b312fc0d6db6",
+      "bind_sfamily": "fd95e83f-4c5c-4121-9459-987ad889cfc1",
+      "bind_time": 1225512833,
+      "car_number": "03b177a3-8b78-4e62-be34-dc4f482b02d6",
+      "check": 1225512833,
+      "day_distance": 1225512833,
+      "devspeed": 1225512833,
+      "duration": 1225512833,
+      "external_voltage": "0184d4c2-ca99-4bd5-a6c7-8ef14b292a98",
+      "extra_info": {
+        "contact_name": "9206f329-ecd1-4386-a618-d36122980a9c",
+        "contact_phone": "f9e6fa83-186f-46c4-99cf-af5c862ca218",
+        "contact_remark": "35cf9c89-4034-4375-be4e-f1113c91ba7f"
+      },
+      "familyname": "6838bfec-8ad8-4be8-81b2-c86326dd3737",
+      "fencename": "17a79347-32d5-49e6-a831-966bc0011ea9",
+      "finish_time": 1225512833,
+      "frame_num": "69a3b5b2-6711-44d2-ac17-c7aa42114274",
+      "gen_family_name": "a65c0cca-275b-427c-b62f-63e0dc90e1f3",
+      "gen_sfamilyid": "7bc0d9a6-8fe1-48d1-befb-20acc6df419c",
+      "glonass_satellite": 1225512833,
+      "gps_satellite": 1225512833,
+      "groupname": "31b3de3b-73b1-4a99-865f-ef4d7763bafc",
+      "imei": 1225512833,
+      "is_defend": false,
+      "loc_type": 1225512833,
+      "oil_state": "e_oil_normal|e_oil_off",
+      "power": 1225512833,
+      "sackid": "34a9e8a1-39d5-46f8-aace-500a7d1e3b27",
+      "satellite_type": [
+        "e_type_gps|e_type_beidou|e_type_glonass",
+        "e_type_gps|e_type_beidou|e_type_glonass"
+      ],
+      "sfamily": "06c59363-4767-4cca-aa2a-cb77590b412c",
+      "sgid": "c07bb97b-8a24-4c38-8860-7ba265b8211c",
+      "signa_type": 1225512833,
+      "signa_val": 1225512833,
+      "signal_rate": 1225512833,
+      "simei": "1e022867-45c5-4fbc-a084-62982d72c99b",
+      "status": "e_alarm_status_unack|e_alarm_status_ack",
+      "time": 1225512833,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "version": "0c7f747e-1e1c-4431-96ab-3b8a079890b7"
+    },
+    {
+      "acc_power": "e_acc_power_charge|e_acc_power_interuupt",
+      "acc_state": "e_acc_close|e_acc_open|e_acc_empty",
+      "addr": "dc549541-8312-4af5-8006-7ca292b2c26a",
+      "alarm_id": 1225512833,
+      "alarm_name": "a134f0b7-324a-4948-8d86-a768a73c1a42",
+      "allow_delete": false,
+      "altitude": 1225512833,
+      "bd_satellite": 1225512833,
+      "bind_familyname": "1af69a00-5129-416c-aa29-d40211aa7938",
+      "bind_phone": "c7d2e577-c31b-42ba-873c-a9dadcb9fda0",
+      "bind_sfamily": "9ddd04e8-bb7e-4fe1-a58b-84229ed97d7d",
+      "bind_time": 1225512833,
+      "car_number": "703d406d-646e-4fcb-a9b3-2d5fa898fbfa",
+      "check": 1225512833,
+      "day_distance": 1225512833,
+      "devspeed": 1225512833,
+      "duration": 1225512833,
+      "external_voltage": "3011e413-c2af-4337-8b1d-6ffe2521ae28",
+      "extra_info": {
+        "contact_name": "7627bb7d-6baf-4530-ac7c-268163426dfd",
+        "contact_phone": "327cd6d5-9d4c-4b99-b66c-0d19dcf76b8d",
+        "contact_remark": "08b98136-89d9-4819-bc70-b8226727bf1d"
+      },
+      "familyname": "fa4dd58e-c568-41f9-906c-49e502140f70",
+      "fencename": "6c94e67e-1e26-473c-ae88-842259de9e6d",
+      "finish_time": 1225512833,
+      "frame_num": "0fea28bb-0cdc-4372-9bb5-e62c9a4ddb56",
+      "gen_family_name": "8db75193-c649-40cd-a9fe-b4133ec7355c",
+      "gen_sfamilyid": "22170b4c-8dcf-416d-870b-efa8c1f9c43b",
+      "glonass_satellite": 1225512833,
+      "gps_satellite": 1225512833,
+      "groupname": "4271a127-671d-460d-b9e0-c9384c9d83e7",
+      "imei": 1225512833,
+      "is_defend": false,
+      "loc_type": 1225512833,
+      "oil_state": "e_oil_normal|e_oil_off",
+      "power": 1225512833,
+      "sackid": "3510f94e-820e-4af4-b7ba-1415e398857e",
+      "satellite_type": [
+        "e_type_gps|e_type_beidou|e_type_glonass"
+      ],
+      "sfamily": "c579ce5f-a77c-4df8-b7a7-afeedc408a82",
+      "sgid": "fbbebbdc-39f5-4850-a2a4-a2f17c1e1b7d",
+      "signa_type": 1225512833,
+      "signa_val": 1225512833,
+      "signal_rate": 1225512833,
+      "simei": "239d0193-f40e-41f2-9af1-049555dd5b36",
+      "status": "e_alarm_status_unack|e_alarm_status_ack",
+      "time": 1225512833,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "version": "74defe9f-8fc8-4b33-b027-1c0442e0fabb"
+    }
+  ],
+  "last_fencename": "54295078-813c-4c55-8f35-8b19e2d62de3",
+  "last_imei": 1225512833,
+  "last_time": 1225512833,
+  "last_type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+  "total": 1225512833,
+  "unack_total": 1225512833
+}
+```
+
+<a id="alarm-Del"></a>
+## 删除报警信息 (`Del`)
+
+- 接口 ID：`alarm.Del`
+- 模块：`alarm`
+- 用途：删除报警信息
+- 原始位置：`source/报警(alarm).txt` 第 1039 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1，需要删除报警权限；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Del |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.fence` | `string` | 需要删除的日志的围栏名称，必填 |
+| `params.gen_sfamilyid` | `string` | 该告警所属的组织id |
+| `params.simei` | `string` | 如果设备登入，不填 |
+| `params.time` | `number` | 需要删除的时间 |
+| `params.type` | `string` | 报警类型,注意，必填<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "Del",
+  "params": {
+    "fence": "11c3e2e3-5042-4563-bd8f-654d6629c535",
+    "gen_sfamilyid": "50d6f053-f8e2-4d58-85d0-e4534a55b481",
+    "simei": "69fa5643-4261-4912-8d7b-51643dbe338c",
+    "time": 253312338,
+    "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "dc9d0109-ff2e-4388-85a8-4309a327fd4c"
+}
+```
+
+<a id="alarm-GetStat"></a>
+## 获取设备报警统计 (`GetStat`)
+
+- 接口 ID：`alarm.GetStat`
+- 模块：`alarm`
+- 用途：获取设备报警统计
+- 原始位置：`source/报警(alarm).txt` 第 1182 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1,报警消息最高不超过100；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetStat |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.is_get_child` | `boolean` | 是否包含下级的组织数据，默认包含 |
+| `params.last_sgid` | `string` | 上一页获取返回最后一条数据的分组id |
+| `params.last_simei` | `string` | 上一页获取返回最后一条数据的设备id |
+| `params.limit_size` | `number` | 数据的限制条数，默认20条,最高不超过100 |
+| `params.sfamily` | `string` | 需要拉取的组织id,如果设备登入，不填,字段sgid,simei,sfamilyid三选一 |
+| `params.sgid` | `string` | 需要获取统计的车组,如果设备登入，不填,字段sgid,simei,sfamilyid三选一 |
+| `params.simei` | `array` | 统计的设备id，如果设备登入，不填,必须是同个组织下的设备.字段sgid,simei,sfamilyid三选一 |
+| `params.time_begin` | `number` | 起始时间戳,为0或者不传,即以服务器的起始时间算起 |
+| `params.time_end` | `number` | 结束时间戳,为0或者不传,即以服务器的当前时间算起 |
+| `params.type` | `array` | 类型,没有表示全部<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `params.version` | `array` | 按设备型号过滤, 使用sfamily时生效 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetStat",
+  "params": {
+    "is_get_child": true,
+    "last_sgid": "27abba07-f401-4ed9-88f0-191d7970ebd9",
+    "last_simei": "0beb5b08-b156-4962-b0ff-f63a5d988d88",
+    "limit_size": 1205193600,
+    "sfamily": "66014822-145c-49f8-9de0-d87148d50cd5",
+    "sgid": "f9e2272b-a3d9-4479-b68e-694b0caf32ca",
+    "simei": [
+      "cc3bae02-e972-41d7-ad89-c0486d62424c",
+      "c78db4fa-9bb2-4eb1-b11d-6f4f64ad5d31"
+    ],
+    "time_begin": 1205193600,
+    "time_end": 1205193600,
+    "type": [
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    ],
+    "version": [
+      "ace8c8df-50a4-4dc0-a23d-dc856e7acc58"
+    ]
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` | 报警列表 |
+| `items.acc_off` | `number` | ACC关闭报警 |
+| `items.bind_familyname` | `string` | 绑定终端组织名称 |
+| `items.bind_phone` | `string` | 绑定手机号 |
+| `items.bind_sfamily` | `string` | 绑定终端组织id |
+| `items.bind_time` | `number` | 绑定时间 |
+| `items.car_number` | `string` | 车牌号 |
+| `items.close_down` | `number` | 关机报警 |
+| `items.dismantle` | `number` | 防拆报警 |
+| `items.displacement` | `number` | 位移报警 |
+| `items.familyname` | `string` | 组织名称 |
+| `items.frame_num` | `string` | 车架号, 使用setdetail设置车架号需添加additional字段，additional为字典类型 |
+| `items.groupname` | `string` | 分组名称 |
+| `items.illegal_open` | `number` | 非法开门 |
+| `items.illegal_start` | `number` | 非法启动 |
+| `items.imei` | `number` | 设备号 |
+| `items.in_fence` | `number` | 进围栏 |
+| `items.light_off` | `number` | 设备脱落报警 |
+| `items.line_dismantle` | `number` | 有线的断电报警,防拆报警 |
+| `items.lowpower` | `number` | 设备低电量报警 |
+| `items.off_line` | `number` | 离线报警 |
+| `items.out_fence` | `number` | 出围栏 |
+| `items.power_cut_off` | `number` | 断油断电报警 |
+| `items.pseudo_base_station` | `number` | 伪基站报警 |
+| `items.recovery_light` | `number` | 恢复光感脱落,已合并至解除防拆报警 |
+| `items.remove_lowpower` | `number` | 解除低电量报警 |
+| `items.remove_out` | `number` | 解除防拆报警 |
+| `items.satellite` | `number` | 卫星盲区报警 |
+| `items.sensitivity` | `number` | 灵敏度报警 |
+| `items.sfamily` | `string` | 组织id |
+| `items.sgid` | `string` | 分组id |
+| `items.shake` | `number` | 震动报警 |
+| `items.simei` | `string` | 设备id |
+| `items.sos` | `number` | SOS报警 |
+| `items.speed` | `number` | 超速报警 |
+| `items.speeding_end` | `number` | 解除超速 |
+| `items.start_dev` | `number` | 终端启动报警 |
+| `items.start_up` | `number` | 开机报警 |
+| `items.stop_dev` | `number` | 停车报警 |
+| `items.total` | `number` | 震动报警 |
+| `items.version` | `string` | 设备型号 |
+| `total` | `number` | 总数,只有在不翻页的时候返回 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "61d11ff0-eb50-46ea-aa3f-ec3062b5e802",
+  "items": [
+    {
+      "acc_off": 1384814228,
+      "bind_familyname": "a40292e7-7c04-4476-84ec-414d2eabf244",
+      "bind_phone": "742c0fbc-516e-4b3c-8aed-04070725a31b",
+      "bind_sfamily": "b9c5a41b-5ba5-41d1-b18a-d8ed7924f484",
+      "bind_time": 1384814228,
+      "car_number": "304225e3-4c7e-40f2-adcb-57b9dc58297b",
+      "close_down": 1384814228,
+      "dismantle": 1384814228,
+      "displacement": 1384814228,
+      "familyname": "eb68e3f1-a577-4eb5-965c-a3876be6a752",
+      "frame_num": "bcfc61c3-13ed-44b8-b251-f80639bea2a8",
+      "groupname": "d8a930a7-becf-4506-ae95-d4d50b7fb6fd",
+      "illegal_open": 1384814228,
+      "illegal_start": 1384814228,
+      "imei": 1384814228,
+      "in_fence": 1384814228,
+      "light_off": 1384814228,
+      "line_dismantle": 1384814228,
+      "lowpower": 1384814228,
+      "off_line": 1384814228,
+      "out_fence": 1384814228,
+      "power_cut_off": 1384814228,
+      "pseudo_base_station": 1384814228,
+      "recovery_light": 1384814228,
+      "remove_lowpower": 1384814228,
+      "remove_out": 1384814228,
+      "satellite": 1384814228,
+      "sensitivity": 1384814228,
+      "sfamily": "d1146282-101a-4804-b605-7baf5457ff37",
+      "sgid": "bf43348b-58c2-4dcb-98a4-45b5d32575f3",
+      "shake": 1384814228,
+      "simei": "02b296d2-854c-498e-85d5-fa24993dea9e",
+      "sos": 1384814228,
+      "speed": 1384814228,
+      "speeding_end": 1384814228,
+      "start_dev": 1384814228,
+      "start_up": 1384814228,
+      "stop_dev": 1384814228,
+      "total": 1384814228,
+      "version": "55d5ab64-e95c-48d1-bbcf-345cf6c456e8"
+    },
+    {
+      "acc_off": 1384814228,
+      "bind_familyname": "1eb1094c-c056-4db8-b55b-e7104b9a5547",
+      "bind_phone": "02bfc866-5c0a-4a48-8149-856f1b00582b",
+      "bind_sfamily": "55e94c79-3fd2-4f32-b8fd-ecf7b32e8b4a",
+      "bind_time": 1384814228,
+      "car_number": "cf746435-1653-434f-b589-1688b810646a",
+      "close_down": 1384814228,
+      "dismantle": 1384814228,
+      "displacement": 1384814228,
+      "familyname": "4e3d9f76-c38c-4dcd-9259-5c31c570458c",
+      "frame_num": "906605df-b6a5-42e4-8ff6-00de604a5d68",
+      "groupname": "86acff9e-9346-4a30-ad96-e6f0bf5c51ce",
+      "illegal_open": 1384814228,
+      "illegal_start": 1384814228,
+      "imei": 1384814228,
+      "in_fence": 1384814228,
+      "light_off": 1384814228,
+      "line_dismantle": 1384814228,
+      "lowpower": 1384814228,
+      "off_line": 1384814228,
+      "out_fence": 1384814228,
+      "power_cut_off": 1384814228,
+      "pseudo_base_station": 1384814228,
+      "recovery_light": 1384814228,
+      "remove_lowpower": 1384814228,
+      "remove_out": 1384814228,
+      "satellite": 1384814228,
+      "sensitivity": 1384814228,
+      "sfamily": "988bfa72-aae7-4a8c-8ff0-e00f186b3d8f",
+      "sgid": "4a5f95d3-e55d-4611-82bc-59d6f6ce3360",
+      "shake": 1384814228,
+      "simei": "3fe9aada-7d58-4164-bb26-cb3ea2beb3c8",
+      "sos": 1384814228,
+      "speed": 1384814228,
+      "speeding_end": 1384814228,
+      "start_dev": 1384814228,
+      "start_up": 1384814228,
+      "stop_dev": 1384814228,
+      "total": 1384814228,
+      "version": "58eb795f-6517-41da-ac3f-ae87ceab8750"
+    }
+  ],
+  "total": 1384814228
+}
+```
+
+<a id="alarm-BatchDel"></a>
+## 批量删除告警 (`BatchDel`)
+
+- 接口 ID：`alarm.BatchDel`
+- 模块：`alarm`
+- 用途：批量删除告警
+- 原始位置：`source/报警(alarm).txt` 第 1523 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,BatchDel |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.begin_time` | `number` | 开始的时间戳(1635302765)，填写了simei有效，且必须为当天00:00:00点 |
+| `params.end_time` | `number` | 结束时间戳(1635302765)，填写了simei有效，且必须为当天23:59:59点 |
+| `params.include_child` | `boolean` | 结合sfamily使用，是否删除包括下级组织的告警 |
+| `params.items` | `array` | 需要删除的告警列表,最多1000，参数items，sfamily,simei三选一填写，设备号登入可以不用 |
+| `params.items.fencename` | `string` | 触发报警的围栏名称 |
+| `params.items.gen_sfamilyid` | `string` | 该告警所属的组织id |
+| `params.items.simei` | `string` | 设备id,设备号登录可以不用传 |
+| `params.items.time` | `number` | 告警时间 |
+| `params.items.type` | `string` | 报警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `params.sfamily` | `string` | 需要删除的全部的组织告警，参数items，sfamily,simei三选一填写，设备号登入可以不用 |
+| `params.simei` | `array` | 需要删除指定设备的全部告警，注意，这些设备号必须是同一个组织下.参数items，sfamily,simei三选一填写，设备号登入可以不用 |
+| `params.type` | `array` | 如果填写了字段sfamily或simei，那么可以筛选其中几种类型批量删除<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "BatchDel",
+  "params": {
+    "begin_time": 194102610,
+    "end_time": 194102610,
+    "include_child": true,
+    "items": [
+      {
+        "fencename": "0fd66d5f-6889-48d6-8c54-4aa1cfd0298a",
+        "gen_sfamilyid": "9bbd0182-96a3-4ed2-9ed0-4a949312c3b9",
+        "simei": "f2f46a4f-a2fd-48a4-aad4-5ac816918ce0",
+        "time": 194102610,
+        "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+      },
+      {
+        "fencename": "8eb16f27-920e-4a3c-8337-b645432e4efa",
+        "gen_sfamilyid": "34ac46a6-5d25-4442-be7d-4b882c5deedc",
+        "simei": "4c28c67c-f2cd-4fe5-b825-56a73adb4583",
+        "time": 194102610,
+        "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+      }
+    ],
+    "sfamily": "62216902-3877-49f3-a9f8-1d0a4f30752f",
+    "simei": [
+      "a9010aef-81b7-4c7d-9835-8d6f44b9e903",
+      "20e9fa3b-e9a4-474f-8674-517d27c5074a",
+      "192f2169-ff7b-4208-ae29-351ffc258bff",
+      "22e29c76-ce3f-4572-b7dd-d3c440a304d5"
+    ],
+    "type": [
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    ]
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "abbb9f77-a169-47bd-91cc-c7118c908e16"
+}
+```
+
+<a id="alarm-GetAlarmTypeList"></a>
+## 获取可以筛选的告警类型列表 (`GetAlarmTypeList`)
+
+- 接口 ID：`alarm.GetAlarmTypeList`
+- 模块：`alarm`
+- 用途：获取可以筛选的告警类型列表
+- 原始位置：`source/报警(alarm).txt` 第 1796 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetAlarmTypeList |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.alarm_class` | `string` | 告警分类, 默认获取设备相关报警<br>e_alarm_dev  获取设备相关告警<br>e_alarm_car  获取车辆、学生等业务相关告警<br>e_alarm_all  获取全部告警 |
+| `params.check_func` | `boolean` | 用于功能配置表 |
+| `params.simei` | `string` | 需要查询的设备对应的告警列表 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetAlarmTypeList",
+  "params": {
+    "alarm_class": "e_alarm_dev|e_alarm_car|e_alarm_all",
+    "check_func": false,
+    "simei": "60dc31fd-854f-4326-a112-eaadced88696"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` | 可以支持的全部的告警列表 |
+| `items.alarm_id` | `number` | 告警id |
+| `items.alarm_name` | `string` | 名称 |
+| `items.alarm_type` | `string` | 类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `items.func_desc` | `string` | 告警格式 |
+| `items.weight` | `number` |  |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "f81169c5-ee2a-4015-822a-a293caeb6bdd",
+  "items": [
+    {
+      "alarm_id": 1643138572,
+      "alarm_name": "f83f11f0-42b8-4f67-bce4-5219c977f9b9",
+      "alarm_type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "func_desc": "5e82269d-efc0-45fc-adf5-3f407203e3ba",
+      "weight": 1643138572
+    },
+    {
+      "alarm_id": 1643138572,
+      "alarm_name": "f40bf1dc-52bd-44bd-8a3d-5ce15b277c17",
+      "alarm_type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "func_desc": "c4426f49-a837-45e1-817d-198312d0cb22",
+      "weight": 1643138572
+    },
+    {
+      "alarm_id": 1643138572,
+      "alarm_name": "86d7328e-4e92-458d-8353-c8bbbff35914",
+      "alarm_type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "func_desc": "e597279b-68bf-4ad5-897c-00d36c74571e",
+      "weight": 1643138572
+    }
+  ]
+}
+```
+
+<a id="alarm-GetFamilyDaySummary"></a>
+## 获取组织日统计 (`GetFamilyDaySummary`)
+
+- 接口 ID：`alarm.GetFamilyDaySummary`
+- 模块：`alarm`
+- 用途：获取组织日统计
+- 原始位置：`source/报警(alarm).txt` 第 1968 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetFamilyDaySummary |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.date` | `number` | 日期,格式20220531,不填写就是当日 |
+| `params.get_car_stat` | `boolean` | 是否获取车辆相关报警 |
+| `params.get_child` | `boolean` | 是否包含下级，默认false |
+| `params.sfamily` | `string` | 需要拉取的组织id,如果设备登入，不填 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetFamilyDaySummary",
+  "params": {
+    "date": 746512768,
+    "get_car_stat": true,
+    "get_child": true,
+    "sfamily": "d5d2ca71-33bb-4c83-a62d-a4c02256d17c"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `acc_off` | `number` | acc关闭报警 |
+| `close_down` | `number` | 关机报警 |
+| `dismantle` | `number` | 防拆报警 |
+| `distance` | `number` | 分离报警 |
+| `dual_offline` | `number` | 双离线报警 |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `gather` | `number` | 聚集报警 |
+| `in_fence` | `number` | 进围栏报警 |
+| `line_dismantle` | `number` | 断电报警(有线) |
+| `loan_expired` | `number` | 到期报警 |
+| `lowpower` | `number` | 设备低电量报警 |
+| `off_line` | `number` | 离线报警 |
+| `out_fence` | `number` | 出围栏报警 |
+| `shake` | `number` | 震动报警 |
+| `sos` | `number` | SOS报警 |
+| `speed` | `number` | 超速报警 |
+| `stop_dev` | `number` | 停车报警 |
+| `total` | `number` | 总数 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "acc_off": 615268877,
+  "close_down": 615268877,
+  "dismantle": 615268877,
+  "distance": 615268877,
+  "dual_offline": 615268877,
+  "error_message": "6bcf76c2-b604-44cd-94bc-dd28ed08a6b0",
+  "gather": 615268877,
+  "in_fence": 615268877,
+  "line_dismantle": 615268877,
+  "loan_expired": 615268877,
+  "lowpower": 615268877,
+  "off_line": 615268877,
+  "out_fence": 615268877,
+  "shake": 615268877,
+  "sos": 615268877,
+  "speed": 615268877,
+  "stop_dev": 615268877,
+  "total": 615268877
+}
+```
+
+<a id="alarm-GetFamilyAlarmByType"></a>
+## 通过报警类型统计 (`GetFamilyAlarmByType`)
+
+- 接口 ID：`alarm.GetFamilyAlarmByType`
+- 模块：`alarm`
+- 用途：通过报警类型统计
+- 原始位置：`source/报警(alarm).txt` 第 2063 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetFamilyAlarmByType |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.car_number` | `string` | 车牌号 |
+| `params.car_type` | `string` | 车型 |
+| `params.get_child` | `boolean` | 是否包含下级，默认不包含 |
+| `params.last_imei` | `number` | 分页参数，上一次请求返回的最后一条imei |
+| `params.last_time` | `number` | 分页参数，上一次请求返回的最后一条time |
+| `params.last_type` | `string` | 分页参数，上一次请求返回的最后一条type<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `params.limit_size` | `number` | 请求条数，最大100，默认100 |
+| `params.sfamilyid` | `string` | 要查询的组织，组织、分组、设备号 三选一 |
+| `params.sgid` | `string` | 要查询的分组，组织、分组、设备号 三选一 |
+| `params.simei` | `string` | 要查询的设备号,组织、分组、设备号 三选一 |
+| `params.time_begin` | `number` | 报警开始时间 |
+| `params.time_end` | `number` | 报警结束时间 |
+| `params.type` | `string` | 告警类型,目前只支持双离线<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetFamilyAlarmByType",
+  "params": {
+    "car_number": "66822f84-e8ea-4149-a796-65c55bf07542",
+    "car_type": "fbc55fe0-43d9-4da5-98a9-724aad11852f",
+    "get_child": false,
+    "last_imei": 1998520195,
+    "last_time": 1998520195,
+    "last_type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+    "limit_size": 1998520195,
+    "sfamilyid": "65eb49b1-a012-443b-bf84-014004e74ba0",
+    "sgid": "6abdee5d-128b-4212-b12f-8a91e1e53257",
+    "simei": "fd1bd8d3-0cbf-48ed-88b1-f36909ec0d38",
+    "time_begin": 1998520195,
+    "time_end": 1998520195,
+    "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` |  |
+| `items.addr` | `string` | 报警位置 |
+| `items.car_number` | `string` | 车牌号 |
+| `items.car_type` | `string` | 车型 |
+| `items.detail` | `array` |  |
+| `items.detail.imei` | `number` | 设备号 |
+| `items.detail.type` | `number` | 设备类型，0有线款，1无线款 |
+| `items.family_name` | `string` | 组织名称 |
+| `items.group_name` | `string` | 所属分组 |
+| `items.imei` | `number` | 触发报警的设备号 |
+| `items.last_pos` | `string` | 最后定位信息 |
+| `items.time` | `number` | 报警时间 |
+| `items.wire_imei` | `number` | 接线款设备号 |
+| `items.wireless_imei` | `number` | 无线款设备号 |
+| `total` | `number` | 总条数，第一次请求返回 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "93a1191f-96cc-4ae8-90ad-5afadf69650f",
+  "items": [
+    {
+      "addr": "73e2fef1-f0cd-458c-9009-bcb372c13e1f",
+      "car_number": "0c9874ab-ed99-4d85-8399-62d4f400c84d",
+      "car_type": "357f95fb-d9f0-46a6-9b43-f13ab79e23b3",
+      "detail": [
+        {
+          "imei": 1905900858,
+          "type": 1905900858
+        },
+        {
+          "imei": 1905900858,
+          "type": 1905900858
+        },
+        {
+          "imei": 1905900858,
+          "type": 1905900858
+        }
+      ],
+      "family_name": "24cd0876-9042-4f3e-a24e-d25516bf3468",
+      "group_name": "f6531572-74d5-4069-b3f7-98371dff5f0b",
+      "imei": 1905900858,
+      "last_pos": "04e0837f-4130-4c48-aa89-92aba6d48e40",
+      "time": 1905900858,
+      "wire_imei": 1905900858,
+      "wireless_imei": 1905900858
+    },
+    {
+      "addr": "34f52b4b-95cf-4acf-93ea-841e49a49761",
+      "car_number": "0d8f2bc8-54d3-4415-9b17-36857099ddcb",
+      "car_type": "049be3af-e5f9-4c98-8502-511c0c0b0e5b",
+      "detail": [
+        {
+          "imei": 1905900858,
+          "type": 1905900858
+        }
+      ],
+      "family_name": "61bcf550-a49c-4d9a-ad56-6f1c18733bec",
+      "group_name": "8860f675-c0c6-479b-a6fc-d9af4047d4d0",
+      "imei": 1905900858,
+      "last_pos": "7afb78a8-3725-4580-8ba9-d6b8ed14af53",
+      "time": 1905900858,
+      "wire_imei": 1905900858,
+      "wireless_imei": 1905900858
+    }
+  ],
+  "total": 1905900858
+}
+```
+
+<a id="alarm-GetSummaryByDate"></a>
+## 通过日期获取统计 (`GetSummaryByDate`)
+
+- 接口 ID：`alarm.GetSummaryByDate`
+- 模块：`alarm`
+- 用途：通过日期获取统计
+- 原始位置：`source/报警(alarm).txt` 第 2397 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetSummaryByDate |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.date` | `array` | 日统计(20231019) |
+| `params.date_begin` | `number` | 报警开始时间(20231018) |
+| `params.date_end` | `number` | 报警结束时间(20231019) |
+| `params.get_child` | `boolean` | 是否包含下级，默认false |
+| `params.month` | `array` | 月统计(202310) |
+| `params.month_begin` | `number` | 月统计(202310) |
+| `params.month_end` | `number` | 月统计(202310) |
+| `params.sfamilyid` | `string` | 获取指定组织，必填 |
+| `params.type` | `string` | 报警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetSummaryByDate",
+  "params": {
+    "date": [
+      998217650
+    ],
+    "date_begin": 998217650,
+    "date_end": 998217650,
+    "get_child": true,
+    "month": [
+      998217650,
+      998217650,
+      998217650,
+      998217650
+    ],
+    "month_begin": 998217650,
+    "month_end": 998217650,
+    "sfamilyid": "00aa3f2a-848b-4574-9e9a-5540505d4faa",
+    "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `days` | `array` | 日统计 |
+| `days.date` | `number` | 报警日期 |
+| `days.off_line` | `number` | 离线报警 |
+| `days.total_imei` | `number` | 报警设备总数 |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `months` | `array` | 月统计 |
+| `months.date` | `number` | 报警日期 |
+| `months.off_line` | `number` | 离线报警 |
+| `months.total_imei` | `number` | 报警设备总数 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "days": [
+    {
+      "date": 570719448,
+      "off_line": 570719448,
+      "total_imei": 570719448
+    },
+    {
+      "date": 570719448,
+      "off_line": 570719448,
+      "total_imei": 570719448
+    },
+    {
+      "date": 570719448,
+      "off_line": 570719448,
+      "total_imei": 570719448
+    },
+    {
+      "date": 570719448,
+      "off_line": 570719448,
+      "total_imei": 570719448
+    }
+  ],
+  "error_message": "5824142d-df71-4773-b294-f7ff17bdd419",
+  "months": [
+    {
+      "date": 570719448,
+      "off_line": 570719448,
+      "total_imei": 570719448
+    },
+    {
+      "date": 570719448,
+      "off_line": 570719448,
+      "total_imei": 570719448
+    },
+    {
+      "date": 570719448,
+      "off_line": 570719448,
+      "total_imei": 570719448
+    }
+  ]
+}
+```
+
+<a id="alarm-GetAlarmTypeSummary"></a>
+## 告警类型统计 (`GetAlarmTypeSummary`)
+
+- 接口 ID：`alarm.GetAlarmTypeSummary`
+- 模块：`alarm`
+- 用途：告警类型统计
+- 原始位置：`source/报警(alarm).txt` 第 2611 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetAlarmTypeSummary |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.car_number` | `string` | 车牌号 |
+| `params.date_begin` | `number` | 报警开始时间 |
+| `params.date_end` | `number` | 报警结束时间 |
+| `params.dev_type` | `number` | 设备类型 |
+| `params.get_child` | `boolean` | 是否包含下级，默认否 |
+| `params.get_detail` | `boolean` | 获取详情 |
+| `params.last_imei` | `number` | 分页参数，上一次请求返回的最后一条imei |
+| `params.limit_size` | `number` | 请求条数，获取详情时填写，最大100 |
+| `params.protocol` | `number` | 协议 |
+| `params.sfamilyid` | `string` | 要查询的组织id,必填 |
+| `params.simei` | `string` | 加密的设备号 |
+| `params.simeis` | `array` | 查询条件，加密的设备号 |
+| `params.type` | `array` | 如果获取详情，必填<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetAlarmTypeSummary",
+  "params": {
+    "car_number": "f3d3560f-b87b-4648-a581-1b83cdf6e63f",
+    "date_begin": 1974158696,
+    "date_end": 1974158696,
+    "dev_type": 1974158696,
+    "get_child": true,
+    "get_detail": true,
+    "last_imei": 1974158696,
+    "limit_size": 1974158696,
+    "protocol": 1974158696,
+    "sfamilyid": "0a5c7032-63d5-45ad-9d5a-f4f1acbf1de3",
+    "simei": "f679700a-8ebd-469f-a90d-d0d42ebc50ed",
+    "simeis": [
+      "247d9f8e-fbb1-40c5-b630-fcc8a8528919",
+      "84297047-2c31-40b1-88e0-2a4090c61a15",
+      "7edbdf7a-102e-4581-951f-5c14cc467c59"
+    ],
+    "type": [
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+      "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    ]
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` |  |
+| `items.detail` | `array` | 报警详情 |
+| `items.detail.bind_familyname` | `string` |  |
+| `items.detail.bind_phone` | `string` |  |
+| `items.detail.bind_sfamily` | `string` |  |
+| `items.detail.bind_time` | `number` |  |
+| `items.detail.car_number` | `string` |  |
+| `items.detail.dev_type` | `number` |  |
+| `items.detail.familyname` | `string` |  |
+| `items.detail.groupname` | `string` |  |
+| `items.detail.imei` | `number` | 设备号 |
+| `items.detail.protocol` | `number` |  |
+| `items.detail.sfamily` | `string` |  |
+| `items.detail.sgid` | `string` |  |
+| `items.detail.simei` | `string` |  |
+| `items.detail.today` | `number` |  |
+| `items.detail.total` | `number` |  |
+| `items.detail.version` | `string` |  |
+| `items.today` | `number` | 今日报警次数 |
+| `items.total` | `number` | 总报警次数 |
+| `items.type` | `string` | 报警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "11627248-6df9-42e2-993c-e21cedf66b43",
+  "items": [
+    {
+      "detail": [
+        {
+          "bind_familyname": "7ea0c373-10a3-4ca2-a8d4-1e95ac104a64",
+          "bind_phone": "928ebb3a-8441-4015-9b0f-c8b0fba2fd63",
+          "bind_sfamily": "ffa777b1-5901-4f4f-b666-5ec53c3f6863",
+          "bind_time": 465401911,
+          "car_number": "f6062323-8ee9-43aa-99d7-ff1c025831ed",
+          "dev_type": 465401911,
+          "familyname": "91381b41-3f1f-464e-8092-3d5b662b3b29",
+          "groupname": "935fc115-b3d3-42c7-a6e2-37e42eae2d9c",
+          "imei": 465401911,
+          "protocol": 465401911,
+          "sfamily": "d2b330fd-7bed-4844-925f-9b38f62b9635",
+          "sgid": "9334188b-97d9-45ad-8656-679beae7b158",
+          "simei": "66afd799-a3ba-44f2-85d1-0e4f8e65f50e",
+          "today": 465401911,
+          "total": 465401911,
+          "version": "7c2da4ae-b3f1-4940-8745-c2972c7327ee"
+        },
+        {
+          "bind_familyname": "5b25eede-17d5-47dd-88f6-28ec0a634fec",
+          "bind_phone": "837cd337-dedc-433b-81ea-6a63453fe8bd",
+          "bind_sfamily": "1d4c8199-1602-4c69-9648-16e12414f78d",
+          "bind_time": 465401911,
+          "car_number": "21ad1547-dc25-4302-8613-771430ce4d92",
+          "dev_type": 465401911,
+          "familyname": "4c667d08-27c3-4e14-b59f-5b3f13ebf4cd",
+          "groupname": "0e201954-c4e0-405a-971b-982130778555",
+          "imei": 465401911,
+          "protocol": 465401911,
+          "sfamily": "8b070916-6a91-49c6-befa-9ab555ec6b2a",
+          "sgid": "b44c8d0a-b2ac-4d57-9a96-e07bedf34064",
+          "simei": "6eb76235-bedd-4148-8951-a6d66cc31dcb",
+          "today": 465401911,
+          "total": 465401911,
+          "version": "cbead775-b3e9-40fa-9cf3-75bece04f1de"
+        },
+        {
+          "bind_familyname": "80f50ec3-0808-47db-9c8e-c3f004fc4bb2",
+          "bind_phone": "ef227021-f91a-43e4-b4b0-346a2b2a3d9d",
+          "bind_sfamily": "512ae241-9d67-4b2d-84c0-cece7bc694db",
+          "bind_time": 465401911,
+          "car_number": "ccff22d1-5865-4ff4-b341-da7d9bbfc6ab",
+          "dev_type": 465401911,
+          "familyname": "030f8ec4-353a-46bd-bce1-5166a22eece9",
+          "groupname": "11c12a7b-4f29-44f6-943d-987a8c76a06b",
+          "imei": 465401911,
+          "protocol": 465401911,
+          "sfamily": "bf5575ca-c223-4d40-ad91-adfe2a041de8",
+          "sgid": "fe35b7f3-b94c-4a81-8435-28e4f92623c5",
+          "simei": "b808cba9-c98b-4d5a-9802-9d28ab2010b5",
+          "today": 465401911,
+          "total": 465401911,
+          "version": "9f5aa86f-474f-470d-8abc-4d49d75e48db"
+        },
+        {
+          "bind_familyname": "bba2a9a3-08a1-436d-99d3-d71fe8578c4d",
+          "bind_phone": "c1ccc1f9-bb35-4c5c-bee0-93ff4cef1884",
+          "bind_sfamily": "46d0c569-762f-4e92-84fd-f072b12125a4",
+          "bind_time": 465401911,
+          "car_number": "c4e077c2-2583-4ab3-8a5b-b1d9cbcd6a0b",
+          "dev_type": 465401911,
+          "familyname": "0231fab8-0bb8-48a1-a441-269e4ccdeba9",
+          "groupname": "4f42e295-4885-4708-8fc4-5f26baf013ad",
+          "imei": 465401911,
+          "protocol": 465401911,
+          "sfamily": "12512b1d-6422-4cc5-8165-1fffc888b970",
+          "sgid": "947862f7-506e-4cd4-8405-c64421b9daa5",
+          "simei": "b02b90e5-13bf-451e-84a9-15c56aaea3ac",
+          "today": 465401911,
+          "total": 465401911,
+          "version": "0ccc3019-2f85-48f2-9035-ec3be9352844"
+        }
+      ],
+      "today": 465401911,
+      "total": 465401911,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    }
+  ]
+}
+```
+
+<a id="alarm-AlarmAck"></a>
+## 告警确认 (`AlarmAck`)
+
+- 接口 ID：`alarm.AlarmAck`
+- 模块：`alarm`
+- 用途：告警确认
+- 原始位置：`source/报警(alarm).txt` 第 2998 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,AlarmAck |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.items` | `array` | 要操作的项 |
+| `params.items.fencename` | `string` | 围栏名称 |
+| `params.items.imei` | `number` | 设备号 |
+| `params.items.time` | `number` | 告警时间 |
+| `params.items.type` | `string` | 告警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `params.remark` | `string` | 备注 |
+| `params.sfamilyid` | `string` | 筛选的告警组织 |
+| `params.status` | `string` | 告警状态<br>e_alarm_status_unack 待处理<br>e_alarm_status_ack 已处理 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "AlarmAck",
+  "params": {
+    "items": [
+      {
+        "fencename": "d3ac89ec-a664-43b5-bb87-88ea77a7098e",
+        "imei": 363997761,
+        "time": 363997761,
+        "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+      }
+    ],
+    "remark": "20e4f638-6800-4afb-a396-0a7d183d4a79",
+    "sfamilyid": "02b7ce61-7004-46e4-8241-a44ba97df5a7",
+    "status": "e_alarm_status_unack|e_alarm_status_ack"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "c22e8c2a-7688-4554-b1ab-210e5ca93832"
+}
+```
+
+<a id="alarm-GetAlarmStatusSummary"></a>
+## 获取告警确认状态统计 (`GetAlarmStatusSummary`)
+
+- 接口 ID：`alarm.GetAlarmStatusSummary`
+- 模块：`alarm`
+- 用途：获取告警确认状态统计
+- 原始位置：`source/报警(alarm).txt` 第 3152 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetAlarmStatusSummary |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.sfamilyid` | `string` | 加密的组织id，账号所在组织id |
+| `params.status` | `string` | 状态<br>e_alarm_status_unack 待处理<br>e_alarm_status_ack 已处理 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetAlarmStatusSummary",
+  "params": {
+    "sfamilyid": "b5e3c5c1-6670-4d14-823c-6e664da0bad7",
+    "status": "e_alarm_status_unack|e_alarm_status_ack"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `ack_total` | `number` | 已确认总条数 |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `total` | `number` | 总条数 |
+| `unack_total` | `number` | 未确认总条数 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "ack_total": 1350535480,
+  "error_message": "e0ba09a3-9155-4e78-88a1-df6ff4a163b6",
+  "total": 1350535480,
+  "unack_total": 1350535480
+}
+```
+
+<a id="alarm-GetAlarmAck"></a>
+## 获取告警确认详情 (`GetAlarmAck`)
+
+- 接口 ID：`alarm.GetAlarmAck`
+- 模块：`alarm`
+- 用途：获取告警确认详情
+- 原始位置：`source/报警(alarm).txt` 第 3201 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetAlarmAck |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.sackid` | `string` | 告警确认id |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetAlarmAck",
+  "params": {
+    "sackid": "e64a24e8-6e03-4664-95a2-1b88a74ca490"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `create_time` | `number` | 操作时间 |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `opt_account` | `string` | 操作人 |
+| `remark` | `string` | 操作说明 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "create_time": 1529272688,
+  "error_message": "79dbb34c-7265-4470-8c85-90895ebab19e",
+  "opt_account": "bdf92a96-cba8-48f6-9121-4285533c3f62",
+  "remark": "afdec760-b4dc-4c80-8c69-456f1255eab6"
+}
+```
+
+<a id="alarm-GetLastAlarm"></a>
+## 获取最新的告警 (`GetLastAlarm`)
+
+- 接口 ID：`alarm.GetLastAlarm`
+- 模块：`alarm`
+- 用途：获取最新的告警
+- 原始位置：`source/报警(alarm).txt` 第 3245 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetLastAlarm |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.begin_time` | `number` | 要拉取的开始时间，取上一次拉取接口返回的next_begin_time，不传则默认当前时间 |
+| `params.is_get_child` | `boolean` | 是否包含下级，仅传入sfamilyid有效，root不能包含下级 |
+| `params.last_fencename` | `string` | 上次请求的最后一条的fencename |
+| `params.last_imei` | `number` | 上次请求的最后一条的imei |
+| `params.last_time` | `number` | 分页参数，上次请求的最后一条的time |
+| `params.last_type` | `string` | 上次请求的最后一条的type<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `params.limit_size` | `number` | 请求条数 |
+| `params.sfamilyid` | `string` | 要拉取的告警组织,设备号登录不用传 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetLastAlarm",
+  "params": {
+    "begin_time": 1077480430,
+    "is_get_child": true,
+    "last_fencename": "5738c504-7e69-4725-aa19-b44fd6aa83d2",
+    "last_imei": 1077480430,
+    "last_time": 1077480430,
+    "last_type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result",
+    "limit_size": 1077480430,
+    "sfamilyid": "37354bac-d7a1-4dcb-a878-70864cae69f3"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` |  |
+| `items.car_number` | `string` | 车牌号 |
+| `items.content` | `string` | 告警内容 |
+| `items.fencename` | `string` | 告警触发的围栏 |
+| `items.imei` | `number` | 告警的设备号 |
+| `items.speed` | `number` | 告警速度 |
+| `items.time` | `number` | 告警时间 |
+| `items.type` | `string` | 告警类型<br>e_alarm_shake 震动报警 0x03<br>e_alarm_speed 超速报警 0x06<br>e_alarm_out_fence 出围栏 0x05<br>e_alarm_in_fence 进围栏 0x04<br>e_alarm_lowpower 设备低电量报警 0x11<br>e_alarm_acc_off ACC关闭报警 0xff<br>e_alarm_dismantle  防拆报警 0x13<br>e_alarm_line_dismantle 有线的断电报警(防拆报警)<br>e_alarm_recovery_light 恢复光感脱落(已合并至解除防拆报警)<br>e_alarm_off_line 离线报警<br>e_alarm_fence_overspeed 围栏超速报警<br>e_alarm_remove_fence_overspeed 解除围栏超速报警<br>e_alarm_displacement 位移报警0x09<br>e_alarm_speeding_end 解除超速<br>e_alarm_remove_lowpower 解除低电量报警<br>e_alarm_remove_out 解除防拆报警 0x25<br>e_alarm_sos SOS报警 0x01<br>e_alarm_change_sim 换卡报警 0x10<br>e_alarm_sleep 进入休眠模式报警 0x20<br>e_alarm_acc_on ACC开启报警 0xfe<br>e_alarm_sleep_overtime m7设备检测休眠超时，由服务器判断<br>e_alarm_reach_addr 到达地点报警<br>e_alarm_out_addr 离开地点报警<br>e_alarm_sim_overflow 流量超额报警<br>e_alarm_dual_offline 双离线报警<br>e_alarm_config_begin 大于这个值后面的告警属于行业告警<br>e_alarm_illegal_open 非法开门 3<br>e_alarm_illegal_start 非法启动 4<br>e_alarm_sensitivity 灵敏度报警 9<br>e_alarm_power_cut_off 断油断电报警 10 0x02<br>e_alarm_satellite 卫星盲区报警 16<br>e_alarm_close_down 关机报警 18 0x15<br>e_alarm_pseudo_base_station 伪基站报警 20 0x17<br>e_alarm_start_dev 终端启动报警 22<br>e_alarm_stop_dev 停车报警 23<br>e_alarm_satellite_in 进卫星盲区报警 27 0x0a<br>e_alarm_current_low 外电低电报警 30 0x0e<br>e_alarm_current_protection 外电低电保护报警 31 0x0f<br>e_alarm_current_protection_fly 外电低电保护飞行模式报警 33 0x12<br>e_alarm_vor 声控报警 34 0x16<br>e_alarm_door 门报警 35 0x14<br>e_alarm_open_cover 开盖报警 36 0x18<br>e_alarm_low_battery 内部电池低电报警 37 0x19 (没用)<br>e_alarm_harsh_acceletation 剧烈加速报警 39 0x29<br>e_alarm_harsh_braking 紧急制动报警 40 0x30<br>e_alarm_sharp_left 紧急左转报警 41 0x2a<br>e_alarm_sharp_right 紧急右转报警 42 0x2b<br>e_alarm_sharp_crash 剧烈撞击报警 43 0x2c<br>e_alarm_vehicle_rolling 车辆滚动报警 44 0x2d<br>e_alarm_tilting 车辆倾斜报警 45 0x4b<br>e_alarm_sharp_turn 急转弯报警 46 0x4c<br>e_alarm_lane_switching 突然变道报警 47 0x4d<br>e_alarm_vehicle_stability 稳定性报警 48 0x4e<br>e_alarm_vehicle_angle 角度异常报警 49 0x4f<br>e_alarm_ldlespeed 怠速告警 51<br>e_alarm_elecrope_out 电子牵绳远离报警 52<br>e_alarm_fall 跌倒报警 56<br>e_alarm_heart_hign 心率过高报警 57<br>e_alarm_heart_low 心率过低报警 58<br>e_alarm_remove_tilting 解除车辆倾斜报警 54<br>e_alarm_satellite_out 出卫星盲区报警 28 0x0b<br>e_alarm_satellite_first 卫星第一次定位报警29 0x0d<br>e_alarm_start_up 开机报警 17 0x0c<br>e_alarm_fatigue 疲劳驾驶告警<br>e_alarm_fatigue_remove 解除疲劳驾驶告警<br>e_alarm_fatigue_warn 疲劳驾驶预警<br>e_alarm_bark 犬吠报警<br>e_alarm_share_risk_area_in 进共享风险点告警<br>e_alarm_share_risk_area_out 出共享风险点告警<br>e_alarm_risk_area_in 进风险点告警<br>e_alarm_risk_area_out  出风险点告警<br>e_alarm_home 离家报警(天)<br>e_alarm_company 离司报警<br>e_alarm_night 夜不归宿报警<br>e_alarm_gather 聚集报警<br>e_alarm_distance 分离报警<br>e_alarm_score 超分报警<br>e_alarm_loan_expired 贷款到期报警<br>e_alarm_loan_expired_unbind  贷款到期设备解绑<br>e_alarm_loan_expired_bind  贷款到期设备未解绑<br>e_alarm_loan_unbind  贷款未到期设备解绑<br>e_alarm_road_out 出路线报警<br>e_alarm_road_in 进路线报警<br>e_alarm_school_out 出学校报警<br>e_alarm_school_in 进学校报警<br>e_alarm_home_out 离家报警<br>e_alarm_home_in 到家报警<br>e_alarm_stu_lost 走失报警<br>e_alarm_stu_late 迟到通知<br>e_alarm_stu_early 早退通知<br>e_alarm_stu_lack 缺卡通知<br>e_alarm_stu_leave 请假申请通知<br>e_alarm_stu_leave_result 请假结果通知 |
+| `next_begin_time` | `number` | 下次请求的开始时间 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "76277e28-a20a-49cb-9465-64d18dcddde9",
+  "items": [
+    {
+      "car_number": "31b2f5fd-f5e9-4427-92fb-ff84bbee8307",
+      "content": "c40c55b7-2f56-44f3-89ed-2f4406782950",
+      "fencename": "a9195272-15f2-45de-a179-6d9564fff61f",
+      "imei": 648742570,
+      "speed": 648742570,
+      "time": 648742570,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    },
+    {
+      "car_number": "d079131b-17e7-4bcf-a3ff-3a7af95fdec7",
+      "content": "abf56614-008c-4b82-ae1a-7fc63c44dc66",
+      "fencename": "8a5a52e4-7990-4bb3-a4ff-fce880392217",
+      "imei": 648742570,
+      "speed": 648742570,
+      "time": 648742570,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    },
+    {
+      "car_number": "3e4187e2-85c7-4d95-9f67-303b7e122f22",
+      "content": "c5c2166c-950d-4597-adfd-095b6b31d8c0",
+      "fencename": "9539a55e-7361-4cae-a933-356805f123e7",
+      "imei": 648742570,
+      "speed": 648742570,
+      "time": 648742570,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    },
+    {
+      "car_number": "0a2eab5d-34e2-4c9e-935e-703ae84eb6b8",
+      "content": "72f1cbe2-df6e-4b5f-84aa-3d9795b35db3",
+      "fencename": "43263e7f-efdc-44cc-957c-061892a5cf39",
+      "imei": 648742570,
+      "speed": 648742570,
+      "time": 648742570,
+      "type": "e_alarm_min|e_alarm_shake|e_alarm_speed|e_alarm_out_fence|e_alarm_in_fence|e_alarm_lowpower|e_alarm_acc_off|e_alarm_dismantle|e_alarm_line_dismantle|e_alarm_recovery_light|e_alarm_off_line|e_alarm_fence_overspeed|e_alarm_remove_fence_overspeed|e_alarm_displacement|e_alarm_speeding_end|e_alarm_remove_lowpower|e_alarm_remove_out|e_alarm_sos|e_alarm_change_sim|e_alarm_sleep|e_alarm_acc_on|e_alarm_sleep_overtime|e_alarm_reach_addr|e_alarm_out_addr|e_alarm_sim_overflow|e_alarm_dual_offline|e_alarm_config_begin|e_alarm_illegal_open|e_alarm_illegal_start|e_alarm_sensitivity|e_alarm_power_cut_off|e_alarm_satellite|e_alarm_close_down|e_alarm_pseudo_base_station|e_alarm_start_dev|e_alarm_stop_dev|e_alarm_satellite_in|e_alarm_current_low|e_alarm_current_protection|e_alarm_current_protection_fly|e_alarm_vor|e_alarm_door|e_alarm_open_cover|e_alarm_low_battery|e_alarm_harsh_acceletation|e_alarm_harsh_braking|e_alarm_sharp_left|e_alarm_sharp_right|e_alarm_sharp_crash|e_alarm_vehicle_rolling|e_alarm_tilting|e_alarm_sharp_turn|e_alarm_lane_switching|e_alarm_vehicle_stability|e_alarm_vehicle_angle|e_alarm_ldlespeed|e_alarm_elecrope_out|e_alarm_fall|e_alarm_heart_hign|e_alarm_heart_low|e_alarm_remove_tilting|e_alarm_satellite_out|e_alarm_satellite_first|e_alarm_start_up|e_alarm_fatigue|e_alarm_fatigue_remove|e_alarm_fatigue_warn|e_alarm_bark|e_alarm_share_risk_area_in|e_alarm_share_risk_area_out|e_alarm_risk_area_in|e_alarm_risk_area_out|e_alarm_home|e_alarm_company|e_alarm_night|e_alarm_gather|e_alarm_distance|e_alarm_score|e_alarm_loan_expired|e_alarm_loan_expired_unbind|e_alarm_loan_expired_bind|e_alarm_loan_unbind|e_alarm_road_out|e_alarm_road_in|e_alarm_school_out|e_alarm_school_in|e_alarm_home_out|e_alarm_home_in|e_alarm_stu_lost|e_alarm_stu_late|e_alarm_stu_early|e_alarm_stu_lack|e_alarm_stu_leave|e_alarm_stu_leave_result"
+    }
+  ],
+  "next_begin_time": 648742570
+}
+```
+
+<a id="alarm-SetFamilyAlarm"></a>
+## 设置组织告警 (`SetFamilyAlarm`)
+
+- 接口 ID：`alarm.SetFamilyAlarm`
+- 模块：`alarm`
+- 用途：设置组织告警
+- 原始位置：`source/报警(alarm).txt` 第 3544 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：1. 某个告警的参数字段修改了，则属于同一个告警的其他参数字段也需要一起下发, 其他未修改的告警不必下发
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,SetFamilyAlarm |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.company_alarm` | `number` | 是否开启离司告警，1=开，0=关 |
+| `params.company_alarm_child` | `number` | 离司告警是否包含下级组织，1=开，0=关 |
+| `params.company_alarm_days` | `number` | 离司告警天数 |
+| `params.distance_alarm` | `number` | 是否开启分离告警，1=开，0=关 |
+| `params.distance_alarm_child` | `number` | 分离告警是否包含下级组织，1=开，0=关 |
+| `params.distance_alarm_distance` | `number` | 分离报警距离（公里） |
+| `params.familyid` | `string` | 组织id |
+| `params.gather_alarm` | `number` | 是否开启聚集告警，1=开，0=关 |
+| `params.gather_alarm_child` | `number` | 聚集告警是否包含下级组织，1=开，0=关 |
+| `params.gather_alarm_count` | `number` | 聚集报警数量 |
+| `params.gather_alarm_distance` | `number` | 聚集报警距离（米） |
+| `params.home_alarm` | `number` | 是否开启离家告警，1=开，0=关 |
+| `params.home_alarm_child` | `number` | 离家告警是否包含下级组织，1=开，0=关 |
+| `params.home_alarm_days` | `number` | 离家告警天数 |
+| `params.loan_expired_alarm` | `number` | 是否开启贷款到期告警 |
+| `params.loan_expired_alarm_child` | `number` | 贷款到期告警是否包含下级组织 |
+| `params.loan_expired_bind_alarm` | `number` | 是否开启贷款到期设备未解绑报警 |
+| `params.loan_expired_bind_alarm_child` | `number` | 贷款到期设备未解绑告警是否包含下级组织 |
+| `params.loan_expired_unbind_alarm` | `number` | 贷款到期设备解绑报警 |
+| `params.loan_expired_unbind_alarm_child` | `number` | 贷款到期设备解绑告警是否包含下级组织 |
+| `params.loan_unbind_alarm` | `number` | 是否开启贷款未到期设备解绑报警 |
+| `params.loan_unbind_alarm_child` | `number` | 贷款未到期设备解绑告警是否包含下级组织 |
+| `params.night_alarm` | `number` | 是否开启夜不归宿告警，1=开，0=关 |
+| `params.night_alarm_child` | `number` | 夜不归宿告警是否包含下级组织，1=开，0=关 |
+| `params.night_alarm_days` | `number` | 夜不归宿天数 |
+| `params.risk_area_alarm` | `number` | 是否开启共享风险点，1=开，0=关 |
+| `params.risk_area_alarm_child` | `number` | 共享风险点是否包含下级组织，1=开，0=关 |
+| `params.risk_area_alarm_duration` | `number` | 风险区域停留时间（秒） |
+| `params.score_alarm` | `number` | 是否开启超分告警，1=开，0=关 |
+| `params.score_alarm_child` | `number` | 超分告警是否包含下级组织，1=开，0=关 |
+| `params.score_alarm_score` | `number` | 超分告警分数 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "SetFamilyAlarm",
+  "params": {
+    "company_alarm": 990784230,
+    "company_alarm_child": 990784230,
+    "company_alarm_days": 990784230,
+    "distance_alarm": 990784230,
+    "distance_alarm_child": 990784230,
+    "distance_alarm_distance": 990784230,
+    "familyid": "f8b60c12-2414-4a38-b24f-1ed53796ebb0",
+    "gather_alarm": 990784230,
+    "gather_alarm_child": 990784230,
+    "gather_alarm_count": 990784230,
+    "gather_alarm_distance": 990784230,
+    "home_alarm": 990784230,
+    "home_alarm_child": 990784230,
+    "home_alarm_days": 990784230,
+    "loan_expired_alarm": 990784230,
+    "loan_expired_alarm_child": 990784230,
+    "loan_expired_bind_alarm": 990784230,
+    "loan_expired_bind_alarm_child": 990784230,
+    "loan_expired_unbind_alarm": 990784230,
+    "loan_expired_unbind_alarm_child": 990784230,
+    "loan_unbind_alarm": 990784230,
+    "loan_unbind_alarm_child": 990784230,
+    "night_alarm": 990784230,
+    "night_alarm_child": 990784230,
+    "night_alarm_days": 990784230,
+    "risk_area_alarm": 990784230,
+    "risk_area_alarm_child": 990784230,
+    "risk_area_alarm_duration": 990784230,
+    "score_alarm": 990784230,
+    "score_alarm_child": 990784230,
+    "score_alarm_score": 990784230
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "992697cd-d7c2-4440-aadc-f98f0a862420"
+}
+```
+
+<a id="alarm-GetFamilyAlarm"></a>
+## 获取组织告警 (`GetFamilyAlarm`)
+
+- 接口 ID：`alarm.GetFamilyAlarm`
+- 模块：`alarm`
+- 用途：获取组织告警
+- 原始位置：`source/报警(alarm).txt` 第 3671 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetFamilyAlarm |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.familyid` | `string` | 组织id |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetFamilyAlarm",
+  "params": {
+    "familyid": "9e410dad-3b82-4c54-80f8-e62fa345293a"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `company_alarm` | `number` | 是否开启离司告警，1=开，0=关 |
+| `company_alarm_child` | `number` | 离司告警是否包含下级组织，1=开，0=关 |
+| `company_alarm_days` | `number` | 离司告警天数 |
+| `distance_alarm` | `number` | 是否开启分离告警，1=开，0=关 |
+| `distance_alarm_child` | `number` | 分离告警是否包含下级组织，1=开，0=关 |
+| `distance_alarm_distance` | `number` | 分离报警距离（公里） |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `gather_alarm` | `number` | 是否开启聚集告警，1=开，0=关 |
+| `gather_alarm_child` | `number` | 聚集告警是否包含下级组织，1=开，0=关 |
+| `gather_alarm_count` | `number` | 聚集报警数量 |
+| `gather_alarm_distance` | `number` | 聚集报警距离（米） |
+| `home_alarm` | `number` | 是否开启离家告警，1=开，0=关 |
+| `home_alarm_child` | `number` | 离家告警是否包含下级组织，1=开，0=关 |
+| `home_alarm_days` | `number` | 离家告警天数 |
+| `loan_expired_alarm` | `number` | 是否开启贷款到期告警 |
+| `loan_expired_alarm_child` | `number` | 贷款到期告警是否包含下级组织 |
+| `loan_expired_bind_alarm` | `number` | 是否开启贷款到期设备未解绑报警 |
+| `loan_expired_bind_alarm_child` | `number` | 贷款到期设备未解绑告警是否包含下级组织 |
+| `loan_expired_unbind_alarm` | `number` | 贷款到期设备解绑报警 |
+| `loan_expired_unbind_alarm_child` | `number` | 贷款到期设备解绑告警是否包含下级组织 |
+| `loan_unbind_alarm` | `number` | 是否开启贷款未到期设备解绑报警 |
+| `loan_unbind_alarm_child` | `number` | 贷款未到期设备解绑告警是否包含下级组织 |
+| `night_alarm` | `number` | 是否开启夜不归宿告警，1=开，0=关 |
+| `night_alarm_child` | `number` | 夜不归宿告警是否包含下级组织，1=开，0=关 |
+| `night_alarm_days` | `number` | 夜不归宿天数 |
+| `risk_area_alarm` | `number` | 是否开启共享风险点，1=开，0=关 |
+| `risk_area_alarm_child` | `number` | 共享风险点是否包含下级组织，1=开，0=关 |
+| `risk_area_alarm_duration` | `number` | 风险区域停留时间（秒） |
+| `score_alarm` | `number` | 是否开启超分告警，1=开，0=关 |
+| `score_alarm_child` | `number` | 超分告警是否包含下级组织，1=开，0=关 |
+| `score_alarm_score` | `number` | 超分告警分数 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "company_alarm": 1050630065,
+  "company_alarm_child": 1050630065,
+  "company_alarm_days": 1050630065,
+  "distance_alarm": 1050630065,
+  "distance_alarm_child": 1050630065,
+  "distance_alarm_distance": 1050630065,
+  "error_message": "c688171a-8cc9-45ae-a5d0-d0b180fd9b11",
+  "gather_alarm": 1050630065,
+  "gather_alarm_child": 1050630065,
+  "gather_alarm_count": 1050630065,
+  "gather_alarm_distance": 1050630065,
+  "home_alarm": 1050630065,
+  "home_alarm_child": 1050630065,
+  "home_alarm_days": 1050630065,
+  "loan_expired_alarm": 1050630065,
+  "loan_expired_alarm_child": 1050630065,
+  "loan_expired_bind_alarm": 1050630065,
+  "loan_expired_bind_alarm_child": 1050630065,
+  "loan_expired_unbind_alarm": 1050630065,
+  "loan_expired_unbind_alarm_child": 1050630065,
+  "loan_unbind_alarm": 1050630065,
+  "loan_unbind_alarm_child": 1050630065,
+  "night_alarm": 1050630065,
+  "night_alarm_child": 1050630065,
+  "night_alarm_days": 1050630065,
+  "risk_area_alarm": 1050630065,
+  "risk_area_alarm_child": 1050630065,
+  "risk_area_alarm_duration": 1050630065,
+  "score_alarm": 1050630065,
+  "score_alarm_child": 1050630065,
+  "score_alarm_score": 1050630065
+}
+```
+
+<a id="alarm-GetImeiDailyAlarmRank"></a>
+## 获取设备日告警数量排行 (`GetImeiDailyAlarmRank`)
+
+- 接口 ID：`alarm.GetImeiDailyAlarmRank`
+- 模块：`alarm`
+- 用途：获取设备日告警数量排行
+- 原始位置：`source/报警(alarm).txt` 第 3796 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,GetImeiDailyAlarmRank |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.date` | `number` | 日期, 格式如20250101, 不传则默认当天 |
+| `params.is_get_child` | `boolean` | 是否包含下级 |
+| `params.limit_size` | `number` | 返回数量，默认10, 最大100 |
+| `params.sfamilyid` | `string` | 组织id |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "GetImeiDailyAlarmRank",
+  "params": {
+    "date": 456650315,
+    "is_get_child": false,
+    "limit_size": 456650315,
+    "sfamilyid": "264a2552-bbdf-4aee-8ea1-6b1f78ed882c"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `items` | `array` |  |
+| `items.car_number` | `string` | 车牌号 |
+| `items.car_owner_name` | `string` | 车主姓名 |
+| `items.imei` | `number` | 设备号 |
+| `items.total` | `number` | 数量 |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "d958ecc1-0460-4916-9649-4472c74b9f6d",
+  "items": [
+    {
+      "car_number": "8d0e9ced-19e4-4847-b90d-f6920614f4a1",
+      "car_owner_name": "ad659f87-672c-47a3-ae15-f56be7b12591",
+      "imei": 1557100359,
+      "total": 1557100359
+    },
+    {
+      "car_number": "eaea0088-eb3e-4d88-9fba-0cdc0dc5b021",
+      "car_owner_name": "24b0fbb5-a0a4-44ec-93e0-8f08414f7935",
+      "imei": 1557100359,
+      "total": 1557100359
+    }
+  ]
+}
+```
+
+<a id="alarm-SendCarPush"></a>
+## 车辆报警推送 (`SendCarPush`)
+
+- 接口 ID：`alarm.SendCarPush`
+- 模块：`alarm`
+- 用途：车辆报警推送
+- 原始位置：`source/报警(alarm).txt` 第 3864 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,SendCarPush |
+| `module` | `string` | 模块名,alarm |
+| `params` | `object` | 参数列表 |
+| `params.items` | `array` |  |
+| `params.items.alarm_name` | `string` | 告警名称 |
+| `params.items.car_alarm_log` | `object` | 车辆告警日志 |
+| `params.items.car_alarm_log.ack_account` | `string` | 经销商告警确认账号 |
+| `params.items.car_alarm_log.ack_time` | `number` | 经销商告警确认时间 |
+| `params.items.car_alarm_log.addr` | `string` | 地址 |
+| `params.items.car_alarm_log.app_flag` | `number` | default:0 |
+| `params.items.car_alarm_log.car_id` | `number` | 车辆Id |
+| `params.items.car_alarm_log.car_owner_name` | `string` | 车主姓名 |
+| `params.items.car_alarm_log.car_owner_phone` | `string` | 车主手机 |
+| `params.items.car_alarm_log.car_plate_number` | `string` | 车牌号 |
+| `params.items.car_alarm_log.car_status` | `number` | default:0 |
+| `params.items.car_alarm_log.extra` | `string` | 其他信息 |
+| `params.items.car_alarm_log.familyid` | `number` | 车组织ID |
+| `params.items.car_alarm_log.imei` | `number` | 设备号 |
+| `params.items.car_alarm_log.root_familyid` | `number` | 根组织ID, 用于分表。龙环: appflag, 校徽: schoolid |
+| `params.items.car_alarm_log.time` | `number` | default:0 |
+| `params.items.car_alarm_log.type` | `number` | default:0 |
+| `params.items.car_alarm_log.user_ack_account` | `string` | 终端用户告警确认账号 |
+| `params.items.car_alarm_log.user_ack_time` | `number` | 终端用户告警确认时间 |
+| `params.items.push_targets` | `array` | 推送目标<br>e_push_all  推送所有<br>e_push_user  推送终端组织<br>e_push_teacher  推送班主任<br>e_push_business  推送经销商组织 |
+| `params.items.wx_official_push_applet_path` | `string` | 微信服务号推送小程序路径 |
+
+### 请求示例
+
+```json
+{
+  "module": "alarm",
+  "func": "SendCarPush",
+  "params": {
+    "items": [
+      {
+        "alarm_name": "9b85fab0-1d5f-46c0-b9f3-d7a98654fcf5",
+        "car_alarm_log": {
+          "ack_account": "aef58cc3-d525-4b63-8325-8db90efcd073",
+          "ack_time": 1574760275,
+          "addr": "888d8c50-97ec-40c8-86d5-aea2a4f9331e",
+          "app_flag": 1574760275,
+          "car_id": 1574760275,
+          "car_owner_name": "deb6cb7a-3d4a-4da8-955f-15940eed8b9f",
+          "car_owner_phone": "710cd58c-d33f-4fa2-93f1-0405425c4f79",
+          "car_plate_number": "67d01c94-28d3-4c63-8a7d-c1e2d5d09f9a",
+          "car_status": 1574760275,
+          "extra": "20ab2b25-5d64-417b-a7bb-08d81da230ef",
+          "familyid": 1574760275,
+          "imei": 1574760275,
+          "root_familyid": 1574760275,
+          "time": 1574760275,
+          "type": 1574760275,
+          "user_ack_account": "5d995d3d-5988-42d2-ae24-a96fef7d6317",
+          "user_ack_time": 1574760275
+        },
+        "push_targets": [
+          "e_push_all|e_push_user|e_push_teacher|e_push_business",
+          "e_push_all|e_push_user|e_push_teacher|e_push_business",
+          "e_push_all|e_push_user|e_push_teacher|e_push_business"
+        ],
+        "wx_official_push_applet_path": "658c4595-e478-4c52-8220-dbb51a494deb"
+      },
+      {
+        "alarm_name": "58a9db4d-041f-4aa3-9341-117f99bd97c7",
+        "car_alarm_log": {
+          "ack_account": "2fcd8592-deca-4479-8fb9-9f079e4476d5",
+          "ack_time": 1574760275,
+          "addr": "5053bc18-d528-4b3f-9673-c40791c85033",
+          "app_flag": 1574760275,
+          "car_id": 1574760275,
+          "car_owner_name": "4fbf24c9-4830-4bdf-98a4-a60ee40f626b",
+          "car_owner_phone": "9a286173-9e3a-4cda-b80a-31a390bb0fe7",
+          "car_plate_number": "5e666ae3-ca4f-4707-a925-6503fbf68bf6",
+          "car_status": 1574760275,
+          "extra": "6eab472f-c167-4479-ba5a-5bad5b8fda3b",
+          "familyid": 1574760275,
+          "imei": 1574760275,
+          "root_familyid": 1574760275,
+          "time": 1574760275,
+          "type": 1574760275,
+          "user_ack_account": "40cb5594-a3df-4a84-b38f-c3e3dc30ff7b",
+          "user_ack_time": 1574760275
+        },
+        "push_targets": [
+          "e_push_all|e_push_user|e_push_teacher|e_push_business",
+          "e_push_all|e_push_user|e_push_teacher|e_push_business"
+        ],
+        "wx_official_push_applet_path": "e867a0dc-deff-469f-8d1d-7928267ac18a"
+      }
+    ]
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "17f27fdc-04d2-4d8d-b188-e273e4408bd3"
+}
+```

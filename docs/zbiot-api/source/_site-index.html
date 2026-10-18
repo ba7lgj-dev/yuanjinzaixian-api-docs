@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+  <!-- <meta http-equiv="Cache-Control" content="no-store">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0"> -->
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="description" content="一家专业研发、生产、运用物联网智能终端技术，提供全球北斗/GPS定位软、硬件技术服务的高科技公司">
+  <meta name="keywords" content="定位器,GPS,北斗">
+  <meta name="author" content="cc_hard@outlook.com">
+  <meta name="Copyright" content="粤ICP备2021099271号" />
+  <meta name="renderer" content="webkit|ie-comp|ie-stand">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" type="text/css" href="public/css/normalize.min.css" />
+  <link rel="stylesheet" type="text/css" href="public/css/animate.min.css" />
+  <link rel="stylesheet" type="text/css" href="public/css/common.min.css?t=1634612600782" />
+  <link rel="stylesheet" type="text/css" href="public/css/doc.min.css?t=1634612600782" />
+  <!-- element引入 -->
+  <link rel="stylesheet" href="//unpkg.com/element-ui@2.15.7/lib/theme-chalk/index.css" />
+  <title>开放云服务帮助文档</title>
+</head>
+
+<body>
+  <header id="header">
+    <div class="header">
+      <div class="nav">
+        <div class="nav-menu">
+          <!-- <div class="logo">
+            <a>
+              <div class="logo-icon">
+                <img src="public/images/logo.png" alt="">
+              </div>
+            </a>
+          </div> -->
+          <div class="menu">
+            <ul class="list">
+              <li class="item">
+                远近在线，开放云服务
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- min menu -->
+      <div class="nav min-menu">
+        <div class="nav-menu">
+          <!-- <div class="logo">
+            <a>
+              <div class="logo-icon">
+                <img src="public/images/logo.png" alt="">
+              </div>
+            </a>
+          </div> -->
+          <div class="menu">
+            <ul class="list">
+              <li class="item">
+                远近在线，开放云服务
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="main" id="api">
+    <div class="breadcrumb">
+      <div class="content">
+        <div class="nav">
+          <div class="item"><a href="api.html">API开放平台</a></div>
+          <div class="item active">API文档详情</div>
+        </div>
+        <div class="nav">
+          <div class="search-group" v-if="searchList.length">
+            <span>关键词:{{searchText}} <el-button title="刷新" size="mini" icon="el-icon-refresh" plain @click="refresh">
+              </el-button>
+              </i></span>
+            <el-button size="mini" plain icon="el-icon-arrow-up" @click="prev"></el-button>
+            <span class="search-count">{{`${searchIndex + 1} / ${searchList.length}`}}</span>
+            <el-button size="mini" plain @click="next"><i class="el-icon-arrow-down el-icon--down"></i>
+            </el-button>
+          </div>
+          <el-select size="small" filterable remote reserve-keyword placeholder="请输入关键词" :remote-method="remoteMethod"
+            :loading="loading">
+            <el-option v-for="(item,index) in options" :key="index" :label="item.label||item.title" :value="index"
+              @click.stop.native="getSelect(item)">
+            </el-option>
+          </el-select>
+        </div>
+      </div>
+    </div>
+    <!-- 文件读取 -->
+    <section class="section api">
+      <div class="content">
+        <div class="row">
+          <!-- 接口列表 -->
+          <div class="col-silder">
+            <div class="apis">
+              <ul class="list">
+                <li class="item" v-for="(item, index) in api" :key="index">
+                  <div class="name" :class="[{active: current == index}, item.open ? 'open' : 'close']"
+                    @click.stop="read(index, item.name, item.path)">
+                    <i :class="{arrow: item.name !== '前言' && item.name !== '坐标系转换代码'}"></i> {{ item.title }}
+                  </div>
+                  <ol v-if="item.open && item.method && item.method.length">
+                    <li v-for="(child, i) in item.method" @click="analysContent(index, item.method, i)"
+                      :class="{active: child.key == checkName && current === index}">
+                      {{ child.key }} ({{ child.name }})
+                    </li>
+                  </ol>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <!-- 接口内容 -->
+          <div class="col">
+            <div class="ctx">
+              <div id="info">
+                <span class="name">API开放平台</span>
+                <span class="name">API文档详情</span>
+                <span class="name">{{ api.length && api[current].title }}</span>
+              </div>
+              <div id="docs">
+                <!-- 前言 -->
+                <div class="text" v-if="preface">
+                  <div class="docs">
+                    <div class="project">
+                      <div class="title">
+                        <div class="name">技术应用架构</div>
+                        <div class="extend">
+                          <a href="public/pdf/JT808协议V1.12.pdf" target="_blank">车载设备通信协议 <div class="arrow"><i></i>
+                            </div>
+                          </a>
+                        </div>
+                      </div>
+                      <div class="img">
+                        <img src="public/images/technology.png" alt="">
+                      </div>
+                    </div>
+                    <template v-for="(item, index) in texts">
+                      <div class="project" :key="index">
+                        <div class="title">
+                          <div class="name" v-html="searchHighlight(item.name)"></div>
+                        </div>
+                        <div class="text">
+                          <template v-for="(child, i) in item.data">
+                            <p v-if="child" v-html="searchHighlight(child)"></p>
+                            <br v-else />
+                          </template>
+                        </div>
+                      </div>
+                      <div class="project" v-if="false">
+                        <div class="title">
+                          <div class="name">组织架构</div>
+                        </div>
+                        <div class="img full">
+                          <img src="public/images/api.png" alt="">
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <div class="text" v-if="!preface && localShow">
+                  <div class="docs">
+                    <div class="project">
+                      <template v-for="(textItem, index) in api[current].text">
+                        <div class="local-title" :key="index" v-html="searchHighlight(textItem.title)">
+                          {{textItem.title}}
+                        </div>
+                        <div>
+                          <div class="copy-button" @click="copyCode(textItem)">
+                            {{textItem.copyType ? '复制成功' : '复制'}}
+                          </div>
+                          <pre>
+                            <span v-html="searchHighlight(textItem.content)"></span>
+                          </pre>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+                <!-- API -->
+                <div class="project" v-if="currentContent && !preface && !localShow">
+                  <!-- 名称 -->
+                  <div class="name id"><span v-html="searchHighlight(currentContent.key)"></span><span
+                      v-html="searchHighlight(currentContent.name)"></span></div>
+
+                  <!-- 请求地址 -->
+                  <div class="attr" v-if="currentContent">
+                    <h3>请求地址：</h3>
+                    <div class="mark">
+                      <p>
+                        http://cs.iotiot.cc/mapi
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- 参数说明 -->
+                  <template v-if="currentContent.paramText && currentContent.paramText.length > 1">
+                    <h3>参数说明：</h3>
+                    <div class="mark">
+                      <p v-for="(p, i) in currentContent.paramText" :key="i" v-if="i > 0" v-html="searchHighlight(p)">
+                      </p>
+                    </div>
+                  </template>
+
+                  <!-- POST 请求参数说明 -->
+                  <div class="attr" v-if="currentContent.methodType == 'POST' && currentContent.param">
+                    <h3><mark>POST</mark> 请求参数:</h3>
+                    <div class="title">
+                      <span>名称</span>
+                      <span class="type">类型</span>
+                      <span>描述</span>
+                    </div>
+                    <div class="item" v-for="(child, i) in currentContent.param" :key="i">
+                      <span v-html="searchHighlight(child.name)">{{ child.name }}</span>
+                      <span class="type">
+                        <div v-html="searchHighlight(child.type)"></div>
+                      </span>
+                      <span v-html="searchHighlight(child.desc)">{{ child.desc }}</span>
+                    </div>
+                  </div>
+
+                  <!-- GET 请求参数说明 -->
+                  <div class="attr param" v-if="currentContent.methodType == 'GET' && currentContent.param">
+                    <h3><mark>GET</mark> 请求参数说明:</h3>
+                    <pre v-html="searchHighlight(currentContent.param)">{{ currentContent.param }}</pre>
+                  </div>
+
+                  <!-- 参数请求示例-->
+                  <template v-if="currentContent.inputJson">
+                    <h3>示例:</h3>
+                    <pre v-html="syntaxHighlight(currentContent.inputJson)"></pre>
+                  </template>
+
+                  <!-- 输出结果 -->
+                  <div class="attr" v-if="currentContent.result">
+                    <h3>输出结果:</h3>
+                    <div class="item" v-for="(result, i) in currentContent.result" :key="i">
+                      <span v-html="searchHighlight(result.name)">{{ result.name }}</span>
+                      <span class="type">
+                        <div v-html="searchHighlight(result.type)"></div>
+                      </span>
+                      <span v-html="searchHighlight(result.desc)">{{ result.desc }}</span>
+                    </div>
+                  </div>
+
+                  <!-- 接口响应示例-->
+                  <template v-if="currentContent.outputJson">
+                    <h3>示例:</h3>
+                    <pre v-html="syntaxHighlight(currentContent.outputJson)"></pre>
+                  </template>
+                </div>
+                <!-- 快捷入口 -->
+                <div class="quick" v-if="currentContent && !preface">
+                  <div class="item">
+                    <span v-if="currentMethodIndex !== 0"
+                      @click="analysContent(current, api[current].method, currentMethodIndex - 1)">
+                      &lt; 上一个：{{ api[current].method[currentMethodIndex - 1].name }}
+                    </span>
+                  </div>
+                  <div class="item">
+                    <span v-if="currentMethodIndex < api[current].method.length - 1"
+                      @click="analysContent(current, api[current].method, currentMethodIndex + 1)">
+                      下一个：{{ api[current].method[currentMethodIndex + 1].name }} &gt;
+                    </span>
+                  </div>
+                </div>
+                <!-- 疑问 -->
+                <!-- <div class="help" v-if="currentContent && !preface">
+                <h3>如您有其它疑问，请联系我们。</h3>
+                <p>联系邮箱： <a href="mailto:sw@szslxk.com">sw@szslxk.com</a> &nbsp;&nbsp; 联系电话： <a
+                    href="tel:0755-22222188">0755-22222188</a></p>
+              </div> -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="footer" class="footer">
+    <span>
+      Copyright &copy; 2021 All Rights Reserved.
+      <button>
+        <a target="_blank" href="https://beian.miit.gov.cn">
+          粤ICP备2021099271号-3
+        </a>
+      </button>
+    </span>
+  </footer>
+  <script src="public/js/api.js?t=1641967292642"></script>
+  <script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>
+  <script type="text/javascript" src="public/plugin/jquery/jquery.min.js"></script>
+  <script type="text/javascript"
+    src="https://unpkg.com/jquery.nicescroll@3.7.6/dist/jquery.nicescroll.min.js"></script>
+  <script type="text/javascript" src="public/js/common.js?t=1641967292642"></script>
+  <!-- element引入 -->
+  <script src="//unpkg.com/element-ui@2.15.7/lib/index.js"></script>
+
+  <script type="text/javascript">
+    var vm = new Vue({
+      el: '#api',
+      data: {
+        // 前言
+        preface: true,
+        // 坐标系
+        localShow: false,
+        texts: [],
+        api: [],
+        f: 0,
+        current: 0,
+        checkName: "",
+        // API内容
+        currentContent: null,
+        currentMethodIndex: 0,
+        options: [],
+        value: [],
+        list: [],
+        loading: false,
+        searchText: null,
+        // 选择的当前页搜索结果
+        searchList: [],
+        // 当前定位结果
+        searchIndex: 0
+      },
+      methods: {
+        // 搜索
+        remoteMethod (query) {
+          this.searchText = query
+          if (query !== '') {
+            this.loading = true;
+            setTimeout(() => {
+              this.loading = false;
+              this.options = []
+              this.api.forEach((item, index) => {
+                if (item.text && (item.text.includes(query) || item.text instanceof Array && item.text.some(someItem => { return (someItem.content.includes(query) || someItem.title.includes(query)) }))) {
+                  this.options.push(item)
+                } else if (item.htmlArray && item.htmlArray.some(someItem => someItem.includes(query))) {
+                  item.method.forEach((methodItem, methodIndex) => {
+                    item.methodIndex = null
+                    if (!methodItem.param) {
+                      this.analysContent(index, item.method, methodIndex, null, 'search')
+                    }
+                    // 循环遍历最底层判断值是否含有搜索值
+                    const getObjList = (record) => {
+                      const list = Object.keys(record)
+                      list.forEach(listItem => {
+                        if ((typeof record[listItem] === 'string' || typeof record[listItem] === 'number') && String(record[listItem]).includes(query)) {
+                          item.label = `${item.title}->${methodItem.key}`
+                          item.searchType = 'method'
+                          item.methodIndex = methodIndex
+                          const obj = JSON.parse(JSON.stringify(item))
+                          if (this.options.every(optItem => optItem.label !== item.label)) {
+                            this.options.push(obj)
+                          }
+                        } else if (typeof record[listItem] === 'object') {
+                          getObjList(record[listItem])
+                        }
+                      })
+                    }
+                    getObjList(methodItem)
+                  })
+
+                }
+              })
+            }, 200);
+          } else {
+            this.options = [];
+          }
+        },
+        // 选中搜索值
+        getSelect (record) {
+          const index = this.api.findIndex(item => item.path === record.path)
+          if (record.searchType) {
+            this.api[index].open = true
+            this.analysContent(index, record.method, record.methodIndex)
+          } else {
+            this.read(index, record.name, record.path, !this.api[index].open)
+          }
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.searchList = document.getElementsByClassName("search-high")
+              this.searchIndex = 0
+              this.$forceUpdate()
+              this.searchList[this.searchIndex].scrollIntoView()
+            }, 300)
+          })
+        },
+        next () {
+          this.searchIndex < (this.searchList.length - 1) ? this.searchIndex++ : (this.searchIndex = this.searchList.length - 1)
+          this.searchList[this.searchIndex].scrollIntoView()
+        },
+        prev () {
+          this.searchIndex > 0 ? this.searchIndex-- : (this.searchIndex = 0)
+          this.searchList[this.searchIndex].scrollIntoView()
+        },
+        // 清空搜索内容
+        refresh () {
+          this.searchText = ''
+          this.options = []
+          this.searchList = []
+          this.searchIndex = 0
+        },
+        read (index, name, path, isToggle = true, type) {
+          let self = this;
+          if (isToggle) {
+            this.api[index].open = !this.api[index].open;
+          }
+          var oReq = new XMLHttpRequest();
+          var URLToPDF = path;
+          oReq.open("GET", URLToPDF, true);
+          oReq.responseType = "blob";
+          oReq.onload = function () {
+            var file = new Blob([oReq.response]);
+            self.readText(index, name, file, type);
+          };
+          oReq.send();
+        },
+
+        readText (index, name, file, type) {
+          let self = this;
+          var reader = new FileReader();
+          reader.readAsText(file);
+
+          reader.onload = function (data) {
+            let html = this.result;
+
+            if (name == "前言") {
+              self.api[index].text = html;
+              self.texts = [];
+              self.preface = true;
+              self.localShow = false;
+              self.current = 0;
+              self.checkName = "";
+              self.$forceUpdate();
+
+              let keywords = [
+                ["", "关于系统组织大致结构"],
+                ["关于接口", "关于参数"],
+                ["关于参数", "关于sid"],
+                ["关于sid", "关于限频限速"],
+                ["关于限频限速", "关于列表"],
+                ["关于列表", "关于拉取录音文件"],
+                ["关于拉取录音文件", "关于设备指令"],
+                ["关于设备指令", "关于设备导入与添加"],
+                ["关于设备导入与添加", "接口拉取顺序"],
+                ["接口拉取顺序", "部分常见接口错误"],
+                ["部分常见接口错误", ""],
+              ];
+              keywords.map((key, index) => {
+                let va = self.sliceData(key, html.split("\n"));
+                if (va && va.length) {
+                  self.texts.push({
+                    name: va[0],
+                    data: va.splice(1)
+                  });
+                }
+              });
+
+              if (window.screen.width > 860) {
+                self.$nextTick(() => {
+                  $(".col").getNiceScroll().resize();
+                });
+              }
+              return;
+            } else if (name === "坐标系转换代码") {
+              let text = JSON.parse(JSON.stringify(html))
+              const localTitle = ['C++代码：', 'JS代码：']
+              const arr = text.split("\n")
+              const list = localTitle.map((localItem, localIndex) => {
+                let content = text.split(localTitle[1])
+                content = content[localIndex].split(localItem).filter(item => item)
+                return {
+                  title: localItem,
+                  content: content[0]
+                }
+              })
+              self.api[index].text = list
+              if (type !== 'search') {
+                self.texts = [];
+                self.preface = false
+                self.localShow = true;
+                self.current = 1;
+              }
+              self.$forceUpdate();
+              return
+            }
+
+            // 把数据行变为数组
+            self.api[index].htmlArray = html.split("\n");
+
+            // 分切出数据块
+            let module = [{
+              title: "接口索引",
+              keyword: ["模块索引", "接口详情"],
+              html: [],
+              callback: self.convertIndex
+            }];
+
+            module.map(x => {
+              x.html = self.sliceData(x.keyword, self.api[index].htmlArray);
+
+              // 二次转换
+              if (x.callback) {
+                let method = x.callback(x.html);
+                self.api[index].method = method;
+              }
+            });
+
+            // self.$nextTick(() => {
+            //   setTimeout(() => {
+            //     if (self.f) {
+            //       self.analysContent(index, self.api[index].method, self.f, true);
+            //     }
+            //   }, 200)
+            // })
+          }
+        },
+
+        copyCode (record) {
+          const inputEle = document.createElement('textarea')
+          inputEle.setAttribute('readonly', 'readonly') // 防止手机上弹出软键盘
+          document.body.appendChild(inputEle)
+          inputEle.value = record.content
+          inputEle.select()
+          const isOk = document.execCommand('Copy')
+          document.body.removeChild(inputEle)
+          record.copyType = true
+          this.$forceUpdate()
+          const self = this
+          setTimeout(() => {
+            record.copyType = false
+            self.$forceUpdate()
+          }, 2000)
+        },
+
+        // 分切数据
+        sliceData (x, source, equal) {
+          let data = [], start_index, end_index;
+          let dataSource = source || [];
+          for (var i = 0; i < dataSource.length; i++) {
+            let text = dataSource[i];
+
+            if (x.length == 2) {
+              // 开始
+              if (x[0] == "") {
+                start_index = 0;
+              } else {
+                if (equal) {
+                  if (text == x[0]) {
+                    start_index = i;
+                  }
+                } else {
+                  if (text.indexOf(x[0]) !== -1) {
+                    start_index = i;
+                  }
+                }
+              }
+
+              // 结束
+              if (x[1] == "") {
+                end_index = dataSource.length - 1;
+              } else {
+                if (equal) {
+                  if (text == x[1]) {
+                    end_index = i + 1;
+                  }
+                } else {
+                  if (text.indexOf(x[1]) !== -1) {
+                    end_index = i;
+                  }
+                }
+              }
+
+              data = dataSource.slice(start_index, end_index);
+            }
+          }
+          return data;
+        },
+
+        // 处理模块索引
+        convertIndex (data) {
+          let result = [];
+          let self = this;
+          data.map((x, i) => {
+            if (x !== "" && x.indexOf("│") !== -1) {
+              let item = x.split("│");
+              result.push({
+                key: item[1].trim(),
+                name: item[2].trim()
+              });
+            }
+          });
+
+          self.$nextTick(() => {
+            self.$forceUpdate();
+            if (window.screen.width > 860) {
+              setTimeout(() => {
+                $(".col-silder").getNiceScroll().resize();
+                $(".col").getNiceScroll().resize();
+              }, 200);
+            }
+          });
+          return result;
+        },
+
+        // 解析模块下第几个方法的API内容
+        // module: 模块索引
+        // methods: 方法
+        // i: 方法索引
+        analysContent (module, methods, i, auto, type) {
+          let self = this;
+          methods = this.api[module].method;
+
+          // if (!auto) {
+          //   window.location.search = "?m=" + module + "&f=" + i;
+          // }
+
+          let item = methods[i], next = "";
+          if (type !== 'search') {
+            this.checkName = item.key;
+            this.current = module;
+            this.preface = false;
+            this.localShow = false
+            this.currentMethodIndex = i;
+          }
+
+          let sText = item.name + "(" + item.key + ")";
+          let eText = "";
+          if (methods[i + 1]) {
+            next = methods[i + 1];
+            eText = next.name + "(" + next.key + ")";
+          }
+          try {
+            let doc = self.sliceData([sText, eText], self.api[module].htmlArray);
+            // 参数说明
+            let paramText = self.sliceData(["接口详情", "传入参数"], doc);
+            item.paramText = paramText;
+
+            // 参数字段
+            let paramInfo = self.sliceData(["传入参数", "传出结果"], doc);
+
+            let param = [];
+            paramInfo.map(x => {
+              if (x.indexOf("│") !== -1) {
+                let _arr_ = x.split("│");
+                param.push({
+                  name: _arr_[1].trim(),
+                  type: _arr_[2].trim(),
+                  desc: _arr_[3].trim()
+                });
+              }
+            });
+            item.param = param;
+
+            // 通过参数来判断请求类型（临时方案）
+            if (param.length) {
+              item.methodType = "POST";
+            } else {
+              item.methodType = "GET";
+              item.param = paramInfo.join("\n");
+            }
+
+            // 输入示例
+            let input = self.sliceData(["传入参数", "传出结果"], doc);
+            let inputJson = self.sliceData(["{", "}"], input, true);
+            item.inputJson = JSON.parse(inputJson.join(""));
+
+            // 输出结果
+            let resultInfo = self.sliceData(["传出结果", "示例"], doc);
+            let resultData = [];
+            resultInfo.map(x => {
+              if (x.indexOf("│") !== -1) {
+                let _arr_ = x.split("│");
+                resultData.push({
+                  name: _arr_[1].trim(),
+                  type: _arr_[2].trim(),
+                  desc: _arr_[3].trim()
+                });
+              }
+            });
+            item.result = resultData;
+
+            // 输出示例
+            let output = self.sliceData(["传出结果", ""], doc);
+            let outputJson = self.sliceData(["{", "}"], output, true);
+            item.outputJson = JSON.parse(outputJson.join(""));
+          } catch (e) {
+            console.log("不是json格式")
+          }
+
+          // API内容
+          this.currentContent = item;
+          setTimeout(() => {
+            if (window.screen.width > 860) {
+              $(".col").getNiceScroll().resize();
+              $('.col').animate({ "scrollTop": 0 }, 20);
+            } else {
+              $("html,body").animate({ "scrollTop": $('.col').offset().top - 60 }, 20);
+            }
+          }, 50);
+        },
+        // 高亮示例JSON
+        searchHighlight (json) {
+          return json.replaceAll(this.searchText, `<span class="search-high">${this.searchText}</span>`)
+        },
+        // 高亮示例JSON
+        syntaxHighlight (json) {
+          if (typeof json != 'string') {
+            json = JSON.stringify(json, undefined, 2);
+          }
+          const self = this
+          json = json.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+          return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+            var cls = 'number';
+            if (/^"/.test(match)) {
+              if (/:$/.test(match)) {
+                cls = 'key';
+              } else {
+                cls = 'string';
+              }
+            } else if (/true|false/.test(match)) {
+              cls = 'boolean';
+            } else if (/null/.test(match)) {
+              cls = 'null';
+            }
+            match = self.searchHighlight(match)
+            return '<span class="' + cls + '">' + match + '</span>';
+          });
+        },
+        getQueryParams (param) {
+          let query = window.location.search.substring(1)
+          let vars = query.split("&");
+          for (let i = 0; i < vars.length; i++) {
+            let pair = vars[i].split("=");
+            if (pair[0] == param) {
+              if (param == 't') {
+                return parseInt(pair[1]);
+              } else {
+                return pair[1];
+              }
+            }
+          }
+          return 0;
+        },
+      },
+      mounted () {
+        this.api = apis.data;
+        this.api.forEach((x, index) => {
+          x.open = false;
+          x.path = "public/txt/" + x.name + ".txt";
+          x.method = [];
+          x.param = [];
+          x.html = [];
+        });
+
+        this.$nextTick(() => {
+          let m = this.getQueryParams("m");
+          this.f = this.getQueryParams("f");
+
+          let item = this.api[m];
+          let name = item.name,
+            path = item.path;
+
+          this.read(m, name, path);
+          this.api.forEach((item, index) => {
+            if (!item.text) {
+              this.read(index, item.name, item.path, false, 'search')
+            }
+          })
+          if (window.screen.width > 860) {
+            // 自定义滚动条
+            $(".col-silder").niceScroll({ cursorcolor: "rgba(0,0,0,0.2)" });
+            $(".col").niceScroll({ cursorcolor: "rgba(0,0,0,0.2)" });
+          }
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

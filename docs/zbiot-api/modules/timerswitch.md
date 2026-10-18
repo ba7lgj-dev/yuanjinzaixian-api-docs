@@ -1,0 +1,219 @@
+# 定时开关机（timerswitch）
+
+- 模块标识：`timerswitch`
+- 接口数量：3
+- 原始文档：`source/定时开关机(timerswitch).txt`
+- 正式环境：`http://cciot.cc/mapi`
+- 测试环境：`http://csapp.cciot.cc/mapi`
+- 开发环境：`http://192.168.1.105/mapi`
+- 模块负责人：hexiaoqin,fushengyou
+
+## 接口索引
+
+| 接口 | 名称 | 请求字段数 | 返回字段数 |
+| --- | --- | ---: | ---: |
+| [`Set`](#timerswitch-Set) | 设置定时开关 | 9 | 2 |
+| [`Get`](#timerswitch-Get) | 获取定时开关 | 4 | 8 |
+| [`Close`](#timerswitch-Close) | 关闭定时开关 | 4 | 2 |
+
+## 接口详情
+
+<a id="timerswitch-Set"></a>
+## 设置定时开关 (`Set`)
+
+- 接口 ID：`timerswitch.Set`
+- 模块：`timerswitch`
+- 用途：设置定时开关
+- 原始位置：`source/定时开关机(timerswitch).txt` 第 17 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1，设备版本需要支持定时开关机；
+2，最多设置3个时间段；
+3，时间段可以跨天但不可重叠；
+4，睡眠模式下不允许操作；
+5，需要修改设备信息权限；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Set |
+| `module` | `string` | 模块名,timerswitch |
+| `params` | `object` | 参数列表 |
+| `params.loc_type` | `string` | 定时模式,如果是设置，就选填，如果是添加，就必填<br>e_loctype_eachday<br>e_loctype_currentmonth<br>e_loctype_eachmonth |
+| `params.loop_days` | `array` | 模式,如果是设置，就选填，如果是添加，就必填,如果模式为e_loctype_eachmonth或e_loctype_currentmonth时,上传该参数 例如:1 2 13 25 31 范围(1-31) |
+| `params.simei` | `string` | 设备号,如果设备号登入，可以不用填写 |
+| `params.timer` | `array` | 定时开关时间对,如果是设置，就选填，如果是添加，就必填 |
+| `params.timer.close` | `string` | 关机时间，格式: HH:MM |
+| `params.timer.start` | `string` | 开机时间，格式为: HH:MM |
+
+### 请求示例
+
+```json
+{
+  "module": "timerswitch",
+  "func": "Set",
+  "params": {
+    "loc_type": "e_loctype_eachday|e_loctype_currentmonth|e_loctype_eachmonth",
+    "loop_days": [
+      1165374751,
+      1165374751,
+      1165374751
+    ],
+    "simei": "717d65ea-d396-41a9-a49f-ffc26d00240b",
+    "timer": [
+      {
+        "close": "88cbdd96-1755-4ea6-b1d1-01a2ad7f15af",
+        "start": "2569ea70-65d4-4648-ade2-1b43bf9e0d84"
+      }
+    ]
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "679e585b-4fb8-4ec7-872e-4a633cafc5ab"
+}
+```
+
+<a id="timerswitch-Get"></a>
+## 获取定时开关 (`Get`)
+
+- 接口 ID：`timerswitch.Get`
+- 模块：`timerswitch`
+- 用途：获取定时开关
+- 原始位置：`source/定时开关机(timerswitch).txt` 第 84 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Get |
+| `module` | `string` | 模块名,timerswitch |
+| `params` | `object` | 参数列表 |
+| `params.simei` | `string` | 设备号,如果设备号登入，可以不用填写 |
+
+### 请求示例
+
+```json
+{
+  "module": "timerswitch",
+  "func": "Get",
+  "params": {
+    "simei": "a2bf1b2c-476b-48e0-9514-c48c074c87e3"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `current_month` | `number` | 选择当月时的年月份,例如：202106, 默认系统时间 |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+| `loc_type` | `string` | 定时模式<br>e_loctype_eachday<br>e_loctype_currentmonth<br>e_loctype_eachmonth<br>e_loctype_close |
+| `loop_days` | `array` | 周期定位日期 |
+| `timer` | `array` | 周期定位每日的时间 |
+| `timer.close` | `string` | 关机时间，格式: HH:MM |
+| `timer.start` | `string` | 开机时间，格式为: HH:MM |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "current_month": 112075901,
+  "error_message": "2e53ea3f-f2de-4887-84e3-e547209ccd62",
+  "loc_type": "e_loctype_eachday|e_loctype_currentmonth|e_loctype_eachmonth|e_loctype_close",
+  "loop_days": [
+    112075901
+  ],
+  "timer": [
+    {
+      "close": "b800ae93-7e5b-454a-9076-d5d23dbf3c0c",
+      "start": "7323ca32-f6dc-4613-aa42-736b7852f38a"
+    },
+    {
+      "close": "1e687f24-260b-445c-9bd2-0d2b2348b0a3",
+      "start": "46a9aaf5-a641-44ba-872a-b8d79e79e75e"
+    },
+    {
+      "close": "45042cf8-d968-4259-a061-386235500403",
+      "start": "a39e62a5-2203-4732-8f91-b43309dcf4c2"
+    },
+    {
+      "close": "3fd5ee86-7ecf-46cc-b237-3a081fbbe842",
+      "start": "47db3a56-216c-406a-8e54-6db4fb4993dd"
+    }
+  ]
+}
+```
+
+<a id="timerswitch-Close"></a>
+## 关闭定时开关 (`Close`)
+
+- 接口 ID：`timerswitch.Close`
+- 模块：`timerswitch`
+- 用途：关闭定时开关
+- 原始位置：`source/定时开关机(timerswitch).txt` 第 158 行
+- URL 参数：sid(会话登入id，登入成功之后由服务器返回)
+
+### 说明
+
+限制条件：
+1，设备版本需要支持定时开关机；
+2，睡眠模式下不允许操作；
+3，需要修改设备信息权限；
+
+### 请求字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `func` | `string` | 接口名称,Close |
+| `module` | `string` | 模块名,timerswitch |
+| `params` | `object` | 参数列表 |
+| `params.simei` | `string` | 设备号,如果设备号登入，可以不用填写 |
+
+### 请求示例
+
+```json
+{
+  "module": "timerswitch",
+  "func": "Close",
+  "params": {
+    "simei": "899b020d-649c-4171-adf9-49d4022a1d95"
+  }
+}
+```
+
+### 返回字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `errcode` | `uint64` | 错误码，成功返回0 |
+| `error_message` | `string` | 错误提示语（前端可直接展示） |
+
+### 返回示例
+
+```json
+{
+  "errcode": 0,
+  "error_message": "aa27efc0-3228-429d-a4ef-2edbed5a9f36"
+}
+```
