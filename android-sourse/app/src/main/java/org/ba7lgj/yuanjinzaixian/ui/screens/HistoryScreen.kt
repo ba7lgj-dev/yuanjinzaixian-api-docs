@@ -236,12 +236,14 @@ private fun HistoryCycleCard(cycle: HistoryCycleView, onOpenCycle: (String) -> U
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            Icon(
-                imageVector = Icons.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (cycle.editable) {
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
