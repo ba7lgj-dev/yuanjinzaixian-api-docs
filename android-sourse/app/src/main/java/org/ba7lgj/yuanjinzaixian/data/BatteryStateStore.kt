@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.ba7lgj.yuanjinzaixian.domain.BatteryState
 import org.ba7lgj.yuanjinzaixian.domain.BatteryStatus
 import org.ba7lgj.yuanjinzaixian.domain.Confidence
+import org.ba7lgj.yuanjinzaixian.domain.PeopleRules
 
 object BatteryStateStore {
     private const val PREFS = "battery_state"
@@ -14,6 +15,14 @@ object BatteryStateStore {
     private const val KEY_STABLE_SOC = "stable_soc_percent"
     private const val KEY_DISPLAY_SOC = "display_soc_percent"
     private const val KEY_RANGE = "range_km"
+    private const val KEY_LIVE_RANGE = "live_range_km"
+    private const val KEY_ANCHOR_RANGE = "anchor_range_km"
+    private const val KEY_ANCHOR_DISTANCE = "anchor_distance_km"
+    private const val KEY_ANCHOR_VOLTAGE = "anchor_voltage_v"
+    private const val KEY_ANCHOR_OBSERVED = "anchor_observed_at"
+    private const val KEY_RANGE_SOURCE = "range_source"
+    private const val KEY_MODEL_STATE = "model_state"
+    private const val KEY_PEOPLE = "current_people_count"
     private const val KEY_VOLTAGE = "voltage_v"
     private const val KEY_STATUS = "status"
     private const val KEY_CONFIDENCE = "confidence"
@@ -48,6 +57,14 @@ object BatteryStateStore {
             stableSocPercent = prefs.nullableInt(KEY_STABLE_SOC),
             displaySocPercent = prefs.nullableInt(KEY_DISPLAY_SOC),
             rangeKm = prefs.nullableInt(KEY_RANGE),
+            liveRangeKm = prefs.nullableInt(KEY_LIVE_RANGE),
+            anchorRangeKm = prefs.nullableInt(KEY_ANCHOR_RANGE),
+            distanceSinceAnchorKm = prefs.nullableDouble(KEY_ANCHOR_DISTANCE),
+            anchorVoltageV = prefs.nullableDouble(KEY_ANCHOR_VOLTAGE),
+            anchorObservedAt = prefs.nullableLong(KEY_ANCHOR_OBSERVED),
+            rangeSource = prefs.getString(KEY_RANGE_SOURCE, null),
+            modelState = prefs.getString(KEY_MODEL_STATE, null),
+            currentPeopleCount = PeopleRules.clamp(prefs.getInt(KEY_PEOPLE, PeopleRules.DEFAULT)),
             voltageV = prefs.nullableDouble(KEY_VOLTAGE),
             status = prefs.getString(KEY_STATUS, null)
                 ?.let { runCatching { BatteryStatus.valueOf(it) }.getOrNull() }
@@ -84,6 +101,14 @@ object BatteryStateStore {
         editor.putNullableInt(KEY_STABLE_SOC, value.stableSocPercent)
         editor.putNullableInt(KEY_DISPLAY_SOC, value.displaySocPercent)
         editor.putNullableInt(KEY_RANGE, value.rangeKm)
+        editor.putNullableInt(KEY_LIVE_RANGE, value.liveRangeKm)
+        editor.putNullableInt(KEY_ANCHOR_RANGE, value.anchorRangeKm)
+        editor.putNullableDouble(KEY_ANCHOR_DISTANCE, value.distanceSinceAnchorKm)
+        editor.putNullableDouble(KEY_ANCHOR_VOLTAGE, value.anchorVoltageV)
+        editor.putNullableLong(KEY_ANCHOR_OBSERVED, value.anchorObservedAt)
+        editor.putString(KEY_RANGE_SOURCE, value.rangeSource)
+        editor.putString(KEY_MODEL_STATE, value.modelState)
+        editor.putInt(KEY_PEOPLE, PeopleRules.clamp(value.currentPeopleCount))
         editor.putNullableDouble(KEY_VOLTAGE, value.voltageV)
         editor.putString(KEY_STATUS, value.status.name)
         editor.putString(KEY_CONFIDENCE, value.confidence.name)

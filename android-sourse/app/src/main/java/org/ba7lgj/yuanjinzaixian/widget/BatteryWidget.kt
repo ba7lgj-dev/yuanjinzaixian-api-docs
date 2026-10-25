@@ -62,7 +62,7 @@ class BatteryWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .background(ColorProvider(Color(0xB3FFFFFF)))
-                        .padding(6.dp)
+                        .padding(horizontal = 6.dp, vertical = 12.dp)
                         .cornerRadius(12.dp),
                     horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                 ) {
@@ -143,53 +143,49 @@ class BatteryWidget : GlanceAppWidget() {
             ?: state.instantSocPercent
             ?: 0).coerceIn(0, 100)
         val fillWidth = soc / 100f * 136f
-        val pointerOffset = soc / 100f * 131f
-        Box(
-            modifier = GlanceModifier
-                .width(136.dp)
-                .height(31.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Spacer(
-                GlanceModifier
-                    .width(136.dp)
-                    .height(27.dp)
-                    .background(ColorProvider(Color(0xFFF2F2EE)))
-                    .cornerRadius(13.dp)
-            )
-            Spacer(
-                GlanceModifier
-                    .width(fillWidth.dp)
-                    .height(27.dp)
-                    .background(ColorProvider(fillColor(soc)))
-                    .cornerRadius(13.dp)
-            )
-            Row(modifier = GlanceModifier.fillMaxSize()) {
-                Spacer(GlanceModifier.width(pointerOffset.dp))
-                Box(
-                    modifier = GlanceModifier
-                        .width(5.dp)
-                        .height(31.dp)
-                        .background(ColorProvider(Color(0xFFFFFFFF)))
-                        .cornerRadius(3.dp)
-                ) {
-                    Spacer(
-                        GlanceModifier
-                            .fillMaxSize()
-                            .padding(1.5.dp)
-                            .background(pointerColor(state))
-                            .cornerRadius(1.dp)
+        val triangleLeft = (soc / 100f * 136f - 5f).coerceIn(0f, 126f)
+        Column(modifier = GlanceModifier.width(136.dp)) {
+            Box(modifier = GlanceModifier.width(136.dp).height(9.dp)) {
+                Row(modifier = GlanceModifier.fillMaxSize()) {
+                    Spacer(GlanceModifier.width(triangleLeft.dp))
+                    Image(
+                        provider = ImageProvider(pointerDrawable(state)),
+                        contentDescription = null,
+                        modifier = GlanceModifier.width(10.dp).height(7.dp)
                     )
                 }
             }
-            Row(modifier = GlanceModifier.fillMaxSize()) {
-                Spacer(GlanceModifier.width(27.dp))
+            Box(
+                modifier = GlanceModifier
+                    .width(136.dp)
+                    .height(27.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Spacer(
+                    modifier = GlanceModifier
+                        .width(136.dp)
+                        .height(27.dp)
+                        .background(ColorProvider(Color(0xFFF2F2EE)))
+                        .cornerRadius(13.dp)
+                )
                 Spacer(
                     GlanceModifier
-                        .width(1.dp)
+                        .width(fillWidth.dp)
                         .height(27.dp)
-                        .background(ColorProvider(Color(0x66333333)))
+                        .background(ImageProvider(fillDrawable(soc)))
                 )
+                Row(
+                    modifier = GlanceModifier.fillMaxSize(),
+                    verticalAlignment = Alignment.Vertical.CenterVertically
+                ) {
+                    Spacer(GlanceModifier.width(27.dp))
+                    Spacer(
+                        GlanceModifier
+                            .width(1.dp)
+                            .height(27.dp)
+                            .background(ColorProvider(Color(0x66333333)))
+                    )
+                }
             }
         }
     }
@@ -202,28 +198,21 @@ class BatteryWidget : GlanceAppWidget() {
 
     private fun rightText(state: BatteryState): String {
         val soc = state.displaySocPercent ?: state.socPercent ?: state.instantSocPercent
-        return if (
-            state.status == BatteryStatus.STABLE &&
-            !state.stale &&
-            state.rangeKm != null
-        ) {
-            "${state.rangeKm}km"
-        } else {
-            soc?.let { "$it%" } ?: "--"
-        }
+        // 只有“锚点以来的实时距离”可用时才显示公里，否则回到百分比。
+        return state.liveRangeKm?.let { "$it km" } ?: soc?.let { "$it%" } ?: "--"
     }
 
-    private fun fillColor(soc: Int): Color = when {
-        soc < 20 -> Color(0xFFE57373)
-        soc < 80 -> Color(0xFFA5D6A7)
-        else -> Color(0xFF2E7D32)
+    private fun fillDrawable(soc: Int): Int = when {
+        soc < 20 -> R.drawable.widget_battery_fill_red
+        soc < 80 -> R.drawable.widget_battery_fill_light_green
+        else -> R.drawable.widget_battery_fill_dark_green
     }
 
-    private fun pointerColor(state: BatteryState): ColorProvider =
+    private fun pointerDrawable(state: BatteryState): Int =
         if (state.status == BatteryStatus.STABLE && !state.stale) {
-            ColorProvider(Color(0xFF1B5E20))
+            R.drawable.widget_pointer_green
         } else {
-            ColorProvider(Color(0xFF8B8B86))
+            R.drawable.widget_pointer_gray
         }
 }
 
@@ -234,7 +223,7 @@ class RefreshBatteryAction : ActionCallback {
         parameters: ActionParameters
     ) {
         val app = context.applicationContext as? YuanJinApplication ?: return
-        runCatching { app.container.repository.immediateRefresh() }
+        runCatching { app.container.repository.refreshOnce() }
         BatteryWidget().updateAll(context)
     }
 }

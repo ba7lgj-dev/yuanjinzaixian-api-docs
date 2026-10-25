@@ -38,6 +38,40 @@ data class DeviceDetail(
     val rawAccPower: String?
 )
 
+data class TrackDayInfo(
+    val dateKey: String,
+    val distanceKm: Double
+)
+
+data class TrackPointRecord(
+    val timeSec: Long,
+    val lat: Double,
+    val lon: Double,
+    val wgs: String?,
+    val altitudeM: Double?,
+    val altitudeUsable: Boolean,
+    val speedRaw: Double?,
+    val speedKmh: Double?,
+    val direction: Double?,
+    val segmentDistanceM: Double?,
+    val ptype: String?,
+    val externalVoltageV: Double?
+)
+
+data class PauseRecord(
+    val pauseKey: String,
+    val startTime: Long,
+    val endTime: Long,
+    val distanceM: Double
+)
+
+data class PlatformTripRecord(
+    val tripKey: String,
+    val startTime: Long,
+    val endTime: Long,
+    val distanceM: Double
+)
+
 class BiotApiException(
     val code: Long,
     override val message: String

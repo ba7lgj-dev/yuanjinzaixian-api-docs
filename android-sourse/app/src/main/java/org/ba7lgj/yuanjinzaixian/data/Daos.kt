@@ -70,6 +70,12 @@ interface ChargeEventDao {
     suspend fun latest(): ChargeEventEntity?
 
     @Query(
+        "SELECT * FROM charge_events WHERE detectedAt BETWEEN :startTime AND :endTime " +
+            "ORDER BY detectedAt DESC"
+    )
+    suspend fun between(startTime: Long, endTime: Long): List<ChargeEventEntity>
+
+    @Query(
         "UPDATE charge_events SET status = :status, choice = :choice, resolvedAt = :resolvedAt " +
             "WHERE id = :id"
     )

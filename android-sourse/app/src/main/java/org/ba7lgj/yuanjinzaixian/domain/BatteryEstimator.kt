@@ -6,8 +6,11 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 object BatteryEstimator {
-    private const val DEFAULT_FULL_VOLTAGE = 63.0
-    private const val DEFAULT_EMPTY_VOLTAGE = 52.5
+    const val DEFAULT_FULL_VOLTAGE = 65.5
+    const val DEFAULT_EMPTY_VOLTAGE = 55.0
+    const val STABLE_VOLTAGE_TOLERANCE = 0.05
+    private const val OCV_FULL_VOLTAGE = 63.0
+    private const val OCV_EMPTY_VOLTAGE = 52.5
     private const val PROTECTION_SOC = 20.0
     private const val DEFAULT_SOC_PER_KM = 2.5
 
@@ -30,9 +33,9 @@ object BatteryEstimator {
         val full = anchors.fullVoltage ?: DEFAULT_FULL_VOLTAGE
         val empty = anchors.emptyVoltage ?: DEFAULT_EMPTY_VOLTAGE
         if (full <= empty + 1.0) return null
-        val reference = empty + (v - empty) *
-            (DEFAULT_FULL_VOLTAGE - DEFAULT_EMPTY_VOLTAGE) / (full - empty)
-        val clamped = reference.coerceIn(DEFAULT_EMPTY_VOLTAGE, DEFAULT_FULL_VOLTAGE)
+        val reference = OCV_EMPTY_VOLTAGE + (v - empty) *
+            (OCV_FULL_VOLTAGE - OCV_EMPTY_VOLTAGE) / (full - empty)
+        val clamped = reference.coerceIn(OCV_EMPTY_VOLTAGE, OCV_FULL_VOLTAGE)
         val upper = voltageTable.firstOrNull { clamped >= it.second }
             ?: voltageTable.last()
         val index = voltageTable.indexOf(upper)
@@ -64,7 +67,8 @@ object BatteryEstimator {
 
     fun isStable(
         samples: List<VoltageSampleEntity>,
-        restSeconds: Long
+        restSeconds: Long,
+        cycleStartedAt: Long? = null
     ): Boolean {
         if (restSeconds < 30 * 60) return false
         val valid = samples
@@ -72,16 +76,21 @@ object BatteryEstimator {
                 it.voltageV != null &&
                     it.lastComTime != null &&
                     it.lastComTime > 0 &&
+                    it.observedAt == it.lastComTime &&
+                    (cycleStartedAt == null || it.observedAt >= cycleStartedAt) &&
                     !it.cacheSuspect
             }
+            .distinctBy { it.lastComTime }
             .sortedBy { it.observedAt }
-        if (valid.size < 3) return false
-        val first = valid.first()
-        val last = valid.last()
-        if (last.observedAt - first.observedAt < 30 * 60) return false
-        val values = valid.mapNotNull { it.voltageV }
-        if (values.maxOrNull()!! - values.minOrNull()!! > 0.05) return false
-        return last.voltageV!! - first.voltageV!! <= 0.05
+        if (valid.isEmpty()) return false
+        val restStart = valid.last().observedAt - restSeconds
+        val currentRest = valid
+            .filter { it.observedAt >= restStart }
+            .distinctBy { it.lastComTime }
+        if (currentRest.size < 2) return false
+        val last = currentRest.last()
+        val previous = currentRest[currentRest.lastIndex - 1]
+        return abs(last.voltageV!! - previous.voltageV!!) <= 0.05
     }
 
     fun chargeSignal(samples: List<VoltageSampleEntity>): ChargeSignal? {
@@ -90,8 +99,10 @@ object BatteryEstimator {
                 it.voltageV != null &&
                     it.lastComTime != null &&
                     it.lastComTime > 0 &&
+                    it.observedAt == it.lastComTime &&
                     !it.cacheSuspect
             }
+            .distinctBy { it.lastComTime }
             .sortedBy { it.observedAt }
         if (valid.size < 2) return null
         val latest = valid.last()
@@ -124,13 +135,20 @@ object BatteryEstimator {
         anchors: EstimatorAnchors,
         protectionVoltage: Double,
         previous: BatteryState,
-        chargePending: Boolean
+        chargePending: Boolean,
+        stableLock: StableLock? = null,
+        stableCycleStartedAt: Long? = null
     ): BatteryState {
         val latest = samples.maxByOrNull { it.fetchedAt }
             ?: return previous.copy(status = BatteryStatus.WAITING, stale = true)
         val observedAt = latest.lastComTime ?: latest.lastPosTime
         val age = latest.ageSeconds
-        val stable = isStable(samples, latest.restSeconds)
+        val lockStable = stableLock != null &&
+            latest.lastComTime == stableLock.communicationTime &&
+            latest.voltageV != null &&
+            abs(latest.voltageV - stableLock.voltageV) <= STABLE_VOLTAGE_TOLERANCE
+        val stable = lockStable ||
+            isStable(samples, latest.restSeconds, stableCycleStartedAt)
         val instantSoc = socFromVoltage(latest.voltageV, anchors)
         val provisionalSoc = instantSoc
             ?.takeIf { latest.restSeconds >= 15 * 60 }
@@ -142,8 +160,9 @@ object BatteryEstimator {
             ?: previous.socPercent
         val status = when {
             latest.state == "e_line_down" -> BatteryStatus.OFFLINE
-            age > 30 * 60 || observedAt == null -> BatteryStatus.STALE
             chargePending -> BatteryStatus.CHARGE_UNKNOWN
+            lockStable -> BatteryStatus.STABLE
+            age > 30 * 60 || observedAt == null -> BatteryStatus.STALE
             stable -> BatteryStatus.STABLE
             latest.restSeconds < 30 * 60 -> BatteryStatus.REBOUND
             else -> BatteryStatus.WAITING
@@ -154,7 +173,8 @@ object BatteryEstimator {
             Confidence.LOW
         }
         val fullSuggestion = stable &&
-            (latest.voltageV ?: 0.0) >= ((anchors.fullVoltage ?: 62.7) - 0.3)
+            (latest.voltageV ?: 0.0) >=
+            ((anchors.fullVoltage ?: DEFAULT_FULL_VOLTAGE) - 0.3)
         return previous.copy(
             socPercent = displaySoc,
             instantSocPercent = instantSoc,
@@ -177,4 +197,23 @@ object BatteryEstimator {
             lastFetchedAt = latest.fetchedAt
         )
     }
+
+    fun canKeepStableLock(
+        lock: StableLock,
+        communicationTime: Long?,
+        voltage: Double?,
+        mileageIncreased: Boolean
+    ): Boolean {
+        if (mileageIncreased) return false
+        val communicationAdvanced = communicationTime != null &&
+            communicationTime >= lock.communicationTime
+        val voltageWithinTolerance = voltage == null ||
+            abs(voltage - lock.voltageV) <= STABLE_VOLTAGE_TOLERANCE
+        return communicationAdvanced && voltageWithinTolerance
+    }
+
+    fun isNewCommunication(previousTime: Long?, currentTime: Long?): Boolean =
+        currentTime != null &&
+            currentTime > 0 &&
+            (previousTime == null || currentTime > previousTime)
 }

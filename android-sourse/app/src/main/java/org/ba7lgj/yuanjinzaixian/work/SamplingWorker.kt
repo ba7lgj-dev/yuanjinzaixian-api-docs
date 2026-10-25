@@ -23,3 +23,20 @@ class SamplingWorker(
         }
     }
 }
+
+class SamplingScheduleSyncWorker(
+    appContext: Context,
+    params: WorkerParameters
+) : CoroutineWorker(appContext, params) {
+    override suspend fun doWork(): Result {
+        val app = applicationContext as YuanJinApplication
+        val settings = app.container.repository.getSettings()
+        SamplingScheduler.sync(
+            context = app,
+            enabled = app.container.repository.hasCredentials() &&
+                settings.deviceSimei != null,
+            stableMarkedAt = settings.stableMarkedAt
+        )
+        return Result.success()
+    }
+}

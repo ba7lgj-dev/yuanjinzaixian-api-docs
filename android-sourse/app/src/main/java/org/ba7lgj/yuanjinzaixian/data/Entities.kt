@@ -73,5 +73,12 @@ data class AppSettingsEntity(
     val protectionVoltage: Double = 57.8,
     val stationarySince: Long? = null,
     val lastDayDistanceKm: Double? = null,
-    val protectionAlerted: Boolean = false
+    val protectionAlerted: Boolean = false,
+    val stableLockedVoltageV: Double? = null,
+    val stableLockedPosTime: Long? = null,
+    val stableLockedComTime: Long? = null,
+    val stableMarkedAt: Long? = null,
+    val stableCycleStartedAt: Long? = null,
+    /** 人数规则收窄到 1–2 人后，需要在下次启动时用新规则重训一次模型。 */
+    val modelNeedsRetrain: Boolean = false
 )

@@ -25,6 +25,14 @@ data class BatteryState(
     val stableSocPercent: Int? = null,
     val displaySocPercent: Int? = null,
     val rangeKm: Int? = null,
+    val liveRangeKm: Int? = null,
+    val anchorRangeKm: Int? = null,
+    val distanceSinceAnchorKm: Double? = null,
+    val anchorVoltageV: Double? = null,
+    val anchorObservedAt: Long? = null,
+    val rangeSource: String? = null,
+    val modelState: String? = null,
+    val currentPeopleCount: Int = 1,
     val voltageV: Double? = null,
     val status: BatteryStatus = BatteryStatus.WAITING,
     val confidence: Confidence = Confidence.LOW,
@@ -50,15 +58,25 @@ data class SettingsSnapshot(
     val deviceSimei: String? = null,
     val deviceLabel: String? = null,
     val nickname: String? = null,
+    val fullAnchorVoltage: Double = BatteryEstimator.DEFAULT_FULL_VOLTAGE,
+    val emptyAnchorVoltage: Double = BatteryEstimator.DEFAULT_EMPTY_VOLTAGE,
     val protectionVoltage: Double = 57.8,
     val stationarySince: Long? = null,
     val lastDayDistanceKm: Double? = null,
-    val protectionAlerted: Boolean = false
+    val protectionAlerted: Boolean = false,
+    val stableLocked: Boolean = false,
+    val stableMarkedAt: Long? = null
 )
 
 data class EstimatorAnchors(
     val fullVoltage: Double? = null,
     val emptyVoltage: Double? = null
+)
+
+data class StableLock(
+    val voltageV: Double,
+    val communicationTime: Long,
+    val markedAt: Long
 )
 
 data class ChargeSignal(
